@@ -16,3 +16,23 @@
 6. `pm2 save`
 7. `pm2 startup`
 8. copy output and execute
+
+
+# setup crontab
+* * * * * sh /var/www/personal-website-node/github.sh 2>&1 | logger -t github.sh
+
+- Executes the github.sh script.
+- Redirects both stdout and stderr from the script to the logger command.
+- The logger command then writes these messages to the system log with 
+the tag github.sh.
+- we can view the log at `sudo tail -f /var/log/syslog`
+
+# reviewing the logs from the `git-pull-script` (Systemd system)
+`sudo journalctl -t git-pull-script`
+
+## continuous monitoring (debian)
+`tail -f /var/log/syslog | grep git-pull-script`
+
+### (Red Hat)
+`tail -f /var/log/messages | grep git-pull-script`
+
