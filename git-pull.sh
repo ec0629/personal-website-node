@@ -2,7 +2,13 @@
 
 cd /var/www/personal-website-node/ || { echo "Failed to change directory to /var/www/personal-website-node"; exit 1; }
 
-if git fetch --dry-run 2>/dev/null | grep -q 'origin'; then
+echo "Checking for new commits..."
+git fetch
+
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+
+if [ $LOCAL != $REMOTE ]; then
     echo "Updates found. Pulling latest changes..."
     if git pull origin main; then
         echo "Successfully pulled latest changes."
