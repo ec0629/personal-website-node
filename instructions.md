@@ -19,12 +19,12 @@
 
 
 # setup crontab
-* * * * * sh /var/www/personal-website-node/github.sh 2>&1 | logger -t github.sh
+* * * * * sh /var/www/personal-website-node/git-pull.sh 2>&1 | logger -t git-pull-script
 
-- Executes the github.sh script.
+- Executes the `git-pull.sh` script.
 - Redirects both stdout and stderr from the script to the logger command.
 - The logger command then writes these messages to the system log with 
-the tag github.sh.
+the tag `git-pull-script`.
 - we can view the log at `sudo tail -f /var/log/syslog`
 
 # reviewing the logs from the `git-pull-script` (Systemd system)
