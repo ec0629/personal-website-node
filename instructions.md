@@ -36,3 +36,10 @@ the tag `git-pull-script`.
 ### (Red Hat)
 `tail -f /var/log/messages | grep git-pull-script`
 
+# Editing `sudoers` file to run commands without password
+
+`sudo visudo`
+
+`your_username ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t`
+`your_username ALL=(ALL) NOPASSWD: /bin/systemctl reload nginx`
+
