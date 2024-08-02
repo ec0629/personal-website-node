@@ -14,7 +14,7 @@ if [ $LOCAL != $REMOTE ]; then
         echo "Successfully pulled latest changes."
 
         # Check if nginx.conf is updated
-        if git diff --name-only HEAD@{1} HEAD | grep -q 'nginx.conf'; then
+        if git diff --name-only HEAD@{1} HEAD | grep -q 'jeffsimonitto.com.conf'; then
             echo "nginx.conf was updated. Manual deployment needed."
             exit 1
         fi
