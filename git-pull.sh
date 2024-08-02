@@ -13,7 +13,10 @@ if [ $LOCAL != $REMOTE ]; then
     if git pull origin main; then
         echo "Successfully pulled latest changes."
 
+        # should short circuit if the git pull script was updated
+
         # Check if nginx.conf is updated
+        # needs to be update for md5 on the file currently being deployed
         if git diff --name-only HEAD@{1} HEAD | grep -q 'jeffsimonitto.com.conf'; then
             echo "nginx.conf was updated. Manual deployment needed."
             exit 1

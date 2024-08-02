@@ -1,5 +1,5 @@
 #! /usr/bin/bash
 
-cp ./jeffsimonitto.com.conf /var/www/personal-website-node/
+cp ./jeffsimonitto.com.conf /etc/nginx/conf.d/
 
 systemctl reload nginx
