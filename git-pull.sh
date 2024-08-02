@@ -13,10 +13,23 @@ if [ $LOCAL != $REMOTE ]; then
     if git pull origin main; then
         echo "Successfully pulled latest changes."
 
-        if pm2 restart app; then
-            echo "PM2 process restarted."
+        # Check if nginx.conf is updated
+        if git diff --name-only HEAD@{1} HEAD | grep -q 'nginx.conf'; then
+            echo "nginx.conf was updated. Manual deployment needed."
+            exit 1
+        fi
+
+        echo "Installing npm dependencies..."
+        if npm install; then
+            echo "npm dependencies installed."
+
+            if pm2 restart app; then
+                echo "PM2 process restarted."
+            else
+                echo "Failed to restart pm2 process."
+            fi
         else
-            echo "Failed to restart pm2 process."
+            echo "Failed to install npm dependencies."
         fi
     else
         echo "Failed to pull latest changes."
