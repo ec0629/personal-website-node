@@ -15,11 +15,14 @@ if [ $LOCAL != $REMOTE ]; then
 
         # should short circuit if the git pull script was updated
 
-        # Check if nginx.conf is updated
-        # needs to be update for md5 on the file currently being deployed
-        if git diff --name-only HEAD@{1} HEAD | grep -q 'jeffsimonitto.com.conf'; then
-            echo "nginx.conf was updated. Manual deployment needed."
+        NEW_NGINX_MD5=$(md5sum jeffsimonitto.com.conf | awk '{ print $1 }')
+        OLD_NGINX_MD5=$(md5sum /etc/nginx/conf.d/jeffsimonitto.com.conf | awk '{ print $1 }')
+
+        if [ "$NEW_NGINX_MD5" != "$OLD_NGINX_MD5" ]; then
+            echo "nginx.conf has changed. Manual deployment needed."
             exit 1
+        else
+            echo "nginx.conf has not changed. Continuing..."
         fi
 
         echo "Installing npm dependencies..."
