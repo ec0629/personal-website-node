@@ -1,49 +1,39 @@
-const express = require("express");
-const { Server: WebSocketServer } = require("ws");
-const server = require("http").createServer();
+import express from "express";
+import path from "node:path";
+import { engine } from "express-handlebars";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+import { notFound } from "@hapi/boom";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const app = express();
-const PORT = 3000;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, "public")));
+
+app.engine("handlebars", engine());
+app.set("view engine", "handlebars");
+app.set("views", "./views");
 
 app.get("/", function (req, res) {
-    res.sendFile("index.html", { root: __dirname });
+  res.render("home", { title: "JeffSimonitto.com" });
 });
 
-server.on("request", app);
-
-server.listen(PORT, () => {
-    console.log(`Listening on port: ${PORT}`);
+app.use((req, res, next) => {
+  next(notFound("Page not found."));
 });
 
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
-// Websocket
-const wss = new WebSocketServer({ server });
-
-wss.on("connection", (ws) => {
-    const numClients = wss.clients.size;
-
-    console.log(`clients connected: ${numClients}`);
-
-    wss.broadcast(`Current visitors: ${numClients}`);
-
-    if (ws.readyState === ws.OPEN) {
-        ws.send('Welcome!');
-    }
-
-    ws.on("close", () => {
-        wss.broadcast(`Current visitors: ${wss.clients.size}`);
-        console.log('A client has disconnected');
-    });
-
-    ws.on('error', () => {
-        //
-    });
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
 });
 
-wss.broadcast = (data) => {
-    console.log(`Broadcasting: ${data}`);
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(data);
-        }
-    });
-};
+export default app;
