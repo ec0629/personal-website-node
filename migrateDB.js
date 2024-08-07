@@ -1,16 +1,14 @@
-import { dirname, join } from "node:path";
-import Database from "better-sqlite3";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { readdirSync, readFileSync } from "node:fs";
+import { getDirName } from "./src/utils.js";
+import { dbClose, dbExec, dbPrepare } from "./src/db.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = getDirName(import.meta.url);
 
 const migrationDir = join(__dirname, "migrations");
-const db = new Database(join(__dirname, "football.db"));
 
-function startMigration(db) {
-  db.exec(`
+function startMigration() {
+  dbExec(`
     CREATE TABLE IF NOT EXISTS __migrations__ (
         id INTEGER primary key,
         description TEXT NOT NULL,
@@ -18,7 +16,7 @@ function startMigration(db) {
     );
   `);
 
-  const selectMax = db.prepare("SELECT MAX(id) AS max FROM __migrations__");
+  const selectMax = dbPrepare("SELECT MAX(id) AS max FROM __migrations__");
   let { max } = selectMax.get();
   max = max || 0;
 
@@ -39,32 +37,32 @@ function startMigration(db) {
 
   if (scriptsToExecute.length === 0) {
     console.log("Database is up to date.");
-    db.close();
+    dbClose();
   } else {
     try {
-      db.exec("begin");
-      const insertMigration = db.prepare(
+      dbExec("begin");
+      const insertMigration = dbPrepare(
         "INSERT INTO __migrations__ (id, description) VALUES (?, ?)"
       );
 
       for (const { migrationNumber, description, path } of scriptsToExecute) {
         console.log(`Executing script: ${description}`);
         const sql = readFileSync(path, "utf-8");
-        db.exec(sql);
+        dbExec(sql);
         insertMigration.run(migrationNumber, description);
         console.log(
           `${migrationNumber}__${description} was migrated successfully.`
         );
       }
 
-      db.exec("commit");
+      dbExec("commit");
     } catch (err) {
       console.log(err);
-      db.exec("rollback");
+      dbExec("rollback");
     } finally {
-      db.close();
+      dbClose();
     }
   }
 }
 
-startMigration(db);
+startMigration();

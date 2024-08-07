@@ -3,7 +3,7 @@
 // var debug = require('debug')('temp-express:server');
 import http from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
-import app from "../app.js";
+import app from "../src/app";
 
 /**
  * Get port from environment and store in Express.
