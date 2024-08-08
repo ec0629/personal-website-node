@@ -1,12 +1,13 @@
 import { dbTransaction } from "../db.js";
-import { positionEnum, teamEnum } from "../enums.js";
+import { nflTeams, playerPositions } from "../dbMaps.js";
 import {
   insertPlayerProfile,
   insertYahooADP,
-} from "../repositories/playerRepo.js";
+  insertYahooRank,
+} from "../repositories/footballRepo.js";
 
 const yahooUrl =
-  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=500;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
+  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=300;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
 
 async function getYahooPlayerData() {
   let response = await fetch(yahooUrl);
@@ -20,20 +21,27 @@ async function getYahooPlayerData() {
 }
 
 function extractPlayerData({ player }) {
+  const positionAbbr = player["primary_position"];
+  const teamAbbr = player["editorial_team_abbr"];
+
+  const positionId = playerPositions.get(positionAbbr);
+
+  const teamId = nflTeams.get(teamAbbr);
+
   const p = {
     playerId: player["player_id"],
     firstName: player["name"]["first"],
     teamName: player["editorial_team_full_name"],
-    teamAbbr: player["editorial_team_abbr"],
+    teamAbbr,
     lastName: player["name"]["last"],
     adp: player["draft_analysis"]["average_pick"],
     adpRound: player["draft_analysis"]["average_round"],
-    positionAbbr: player["primary_position"],
+    positionAbbr,
     uniformNumber: player["uniform_number"] || null,
     rank: player["player_ranks"][0]["player_rank"]["rank_value"],
     imageUrl: player["image_url"],
-    positionId: positionEnum[player["primary_position"]],
-    teamId: teamEnum[player["editorial_team_abbr"]],
+    positionId,
+    teamId,
   };
 
   if (p.positionAbbr == "DEF" && p.lastName === null) {
@@ -51,6 +59,7 @@ const playerProfileBulkInsert = dbTransaction((players) => {
   for (const player of players) {
     insertPlayerProfile(player);
     insertYahooADP(player);
+    insertYahooRank(player);
   }
 });
 playerProfileBulkInsert(players);
