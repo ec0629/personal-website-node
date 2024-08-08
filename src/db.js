@@ -4,10 +4,10 @@ import { getDirName } from "./utils.js";
 
 const __dirname = getDirName(import.meta.url);
 
-const db = new Database(join(__dirname, "football.db"));
+const db = new Database(join(__dirname, "..", "football.db"));
 
 export function dbExec(statement) {
-  db.exec(statement);
+  return db.exec(statement);
 }
 
 export function dbPrepare(statement) {
@@ -15,5 +15,9 @@ export function dbPrepare(statement) {
 }
 
 export function dbClose() {
-  db.close();
+  return db.close();
+}
+
+export function dbTransaction(func) {
+  return db.transaction(func);
 }

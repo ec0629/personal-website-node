@@ -1,12 +1,10 @@
 import express from "express";
 import path from "node:path";
 import { engine } from "express-handlebars";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { notFound } from "@hapi/boom";
+import { getDirName } from "./utils";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = getDirName(import.meta.url);
 
 const app = express();
 

@@ -1,27 +1,22 @@
-CREATE TABLE users (
-  id INTEGER PRIMARY KEY NOT NULL,
-  username TEXT UNIQUE NOT NULL,
-  salt_key TEXT NOT NULL
-);
-
 CREATE TABLE nfl_team (
   id INTEGER PRIMARY KEY NOT NULL,
   name VARCHAR(255) NOT NULL,
   abbr VARCHAR(3) NOT NULL
 );
 
-INSERT INTO nfl_team (abbr, name) VALUES
-  ('Min', 'Minnesota Vikings'), ('SF', 'San Francisco 49ers'), ('Cin', 'Cincinnati Bengals'),
-  ('LAC', 'Los Angeles Chargers'), ('LAR', 'Los Angeles Rams'), ('Mia', 'Miami Dolphins'),
-  ('Cle', 'Cleveland Browns'), ('Atl', 'Atlanta Falcons'), ('Buf', 'Buffalo Bills'),
-  ('KC', 'Kansas City Chiefs'), ('NYG', 'New York Giants'), ('Dal', 'Dallas Cowboys'),
-  ('Phi', 'Philadelphia Eagles'), ('Ten', 'Tennessee Titans'), ('Ind', 'Indianapolis Colts'),
-  ('LV', 'Las Vegas Raiders'), ('Det', 'Detroit Lions'), ('NYJ', 'New York Jets'),
-  ('Pit', 'Pittsburgh Steelers'), ('NO', 'New Orleans Saints'), ('Jax', 'Jacksonville Jaguars'),
-  ('GB', 'Green Bay Packers'), ('NE', 'New England Patriots'), ('Sea', 'Seattle Seahawks'),
-  ('Bal', 'Baltimore Ravens'), ('Hou', 'Houston Texans'), ('Car', 'Carolina Panthers'),
-  ('Was', 'Washington Commanders'), ('Chi', 'Chicago Bears'), ('Ari', 'Arizona Cardinals'),
-  ('Den', 'Denver Broncos'), ('TB', 'Tampa Bay Buccaneers');
+INSERT INTO nfl_team (id, abbr, name) VALUES
+(1, 'Ari', 'Arizona Cardinals'),(2, 'Atl', 'Atlanta Falcons'),(3, 'Bal', 'Baltimore Ravens'),
+(4, 'Buf', 'Buffalo Bills'),(5, 'Car', 'Carolina Panthers'),(6, 'Chi', 'Chicago Bears'),
+(7, 'Cin', 'Cincinnati Bengals'),(8, 'Cle', 'Cleveland Browns'),(9, 'Dal', 'Dallas Cowboys'),
+(10, 'Den', 'Denver Broncos'),(11, 'Det', 'Detroit Lions'),(12, 'GB', 'Green Bay Packers'),
+(13, 'Hou', 'Houston Texans'),(14, 'Ind', 'Indianapolis Colts'),(15, 'Jax', 'Jacksonville Jaguars'),
+(16, 'KC', 'Kansas City Chiefs'),(17, 'LV', 'Las Vegas Raiders'),(18, 'LAC', 'Los Angeles Chargers'),
+(19, 'LAR', 'Los Angeles Rams'),(20, 'Mia', 'Miami Dolphins'),(21, 'Min', 'Minnesota Vikings'),
+(22, 'NE', 'New England Patriots'),(23, 'NO', 'New Orleans Saints'),(24, 'NYG', 'New York Giants'),
+(25, 'NYJ', 'New York Jets'),(26, 'Phi', 'Philadelphia Eagles'),(27, 'Pit', 'Pittsburgh Steelers'),
+(28, 'SF', 'San Francisco 49ers'),(29, 'Sea', 'Seattle Seahawks'),(30, 'TB', 'Tampa Bay Buccaneers'),
+(31, 'Ten', 'Tennessee Titans'),(32, 'Was', 'Washington Commanders');
+   
 
 CREATE TABLE player_position (
   id INTEGER PRIMARY KEY NOT NULL,
