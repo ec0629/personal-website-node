@@ -7,7 +7,7 @@ import {
 } from "../repositories/footballRepo.js";
 
 const yahooUrl =
-  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=300;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
+  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=400;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
 
 async function getYahooPlayerData() {
   let response = await fetch(yahooUrl);
@@ -55,11 +55,12 @@ console.log("Beginning Yahoo db population...");
 const playerResponse = await getYahooPlayerData();
 console.log("Received player data from Yahoo...");
 const players = playerResponse.map(extractPlayerData);
+const createdOn = new Date().toISOString();
 const playerProfileBulkInsert = dbTransaction((players) => {
   for (const player of players) {
     insertPlayerProfile(player);
-    insertYahooADP(player);
-    insertYahooRank(player);
+    insertYahooADP({ ...player, createdOn });
+    insertYahooRank({ ...player, createdOn });
   }
 });
 playerProfileBulkInsert(players);

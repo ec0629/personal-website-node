@@ -1,5 +1,6 @@
 import {
   getAllNFLTeams,
+  getAllPlayerNamesAndIds,
   getAllPlayerPositions,
 } from "./repositories/footballRepo.js";
 
@@ -13,4 +14,15 @@ for (const { id, abbr } of getAllPlayerPositions()) {
   playerPositions.set(abbr, id);
 }
 
-export { nflTeams, playerPositions };
+const playerNameToId = new Map();
+for (const p of getAllPlayerNamesAndIds()) {
+  if (playerPositions.get("DEF") !== p.positionId) {
+    const nameFingerprint = p.firstName
+      .concat(p.lastName)
+      .replace(/[^a-zA-Z]/g, "")
+      .toLowerCase();
+    playerNameToId.set(nameFingerprint, p.id);
+  }
+}
+
+export { nflTeams, playerPositions, playerNameToId };

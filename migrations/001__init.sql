@@ -43,7 +43,7 @@ CREATE TABLE player_adp (
   player_id INTEGER NOT NULL,
   adp NUMERIC(4, 1) NOT NULL,
   source VARCHAR(10) NOT NULL,
-  created_on TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_on TEXT NOT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on, source)
 );
@@ -53,7 +53,7 @@ CREATE TABLE player_rank (
   player_id INTEGER NOT NULL,
   rank INTEGER NOT NULL,
   source VARCHAR(10) NOT NULL,
-  created_on TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_on TEXT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on)
 );

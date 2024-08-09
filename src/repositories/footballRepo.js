@@ -1,4 +1,4 @@
-import { dbPrepare } from "../db.js";
+import { dbPrepare, dbRun } from "../db.js";
 
 const insertPlayerProfileStatement = dbPrepare(`
   insert into player (id, first_name, last_name, uniform_number, image_url, team_id, position_id)
@@ -6,25 +6,34 @@ const insertPlayerProfileStatement = dbPrepare(`
 `);
 
 export function insertPlayerProfile(data) {
-  return run(insertPlayerProfileStatement, data);
+  return dbRun(insertPlayerProfileStatement, data);
 }
 
 const insertYahooADPStatement = dbPrepare(`
-  insert into player_adp (player_id, adp, source)
-    values (@playerId, @adp, 'yahoo')
+  insert into player_adp (player_id, adp, source, created_on)
+    values (@playerId, @adp, 'yahoo', @createdOn)
 `);
 
 export function insertYahooADP(data) {
-  return run(insertYahooADPStatement, data);
+  return dbRun(insertYahooADPStatement, data);
+}
+
+const insertUnderdogADPStatement = dbPrepare(`
+  insert into player_adp (player_id, adp, source, created_on)
+    values (@playerId, @adp, 'underdog', @createdOn)
+`);
+
+export function insertUnderdogADP(data) {
+  return dbRun(insertUnderdogADPStatement, data);
 }
 
 const insertYahooRankStatement = dbPrepare(`
-  insert into player_rank (player_id, rank, source)
-    values (@playerId, @rank, 'yahoo')
+  insert into player_rank (player_id, rank, source, created_on)
+    values (@playerId, @rank, 'yahoo', @createdOn)
 `);
 
 export function insertYahooRank(data) {
-  return run(insertYahooRankStatement, data);
+  return dbRun(insertYahooRankStatement, data);
 }
 
 const getAllNFLTeamsStatement = dbPrepare(`
@@ -43,6 +52,10 @@ export function getAllPlayerPositions() {
   return getAllPlayerPositionsStatement.all();
 }
 
-function run(stmt, data) {
-  return stmt.run(data);
+const getAllPlayerNamesAndIdsStatement = dbPrepare(`
+  SELECT id, first_name as "firstName", last_name as "lastName", position_id as "positionId" from player
+  `);
+
+export function getAllPlayerNamesAndIds() {
+  return getAllPlayerNamesAndIdsStatement.all();
 }

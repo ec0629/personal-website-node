@@ -10,6 +10,10 @@ export function dbExec(statement) {
   return db.exec(statement);
 }
 
+export function dbRun(statement, data) {
+  return statement.run(data);
+}
+
 export function dbPrepare(statement) {
   return db.prepare(statement);
 }
