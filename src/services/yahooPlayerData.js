@@ -2,12 +2,12 @@ import { dbTransaction } from "../db.js";
 import { nflTeams, playerPositions } from "../dbMaps.js";
 import {
   insertPlayerProfile,
-  insertYahooADP,
-  insertYahooRank,
+  insertYahooData,
 } from "../repositories/footballRepo.js";
+import { createNameMatcher } from "../utils.js";
 
 const yahooUrl =
-  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=400;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
+  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=1100;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
 
 async function getYahooPlayerData() {
   let response = await fetch(yahooUrl);
@@ -23,17 +23,21 @@ async function getYahooPlayerData() {
 function extractPlayerData({ player }) {
   const positionAbbr = player["primary_position"];
   const teamAbbr = player["editorial_team_abbr"];
-
   const positionId = playerPositions.get(positionAbbr);
-
   const teamId = nflTeams.get(teamAbbr);
+
+  const firstName = player["name"]["first"];
+  const lastName = player["name"]["last"];
+
+  const nameMatcher = createNameMatcher(firstName.concat(lastName));
 
   const p = {
     playerId: player["player_id"],
-    firstName: player["name"]["first"],
+    firstName,
+    lastName,
+    nameMatcher,
     teamName: player["editorial_team_full_name"],
     teamAbbr,
-    lastName: player["name"]["last"],
     adp: player["draft_analysis"]["average_pick"],
     adpRound: player["draft_analysis"]["average_round"],
     positionAbbr,
@@ -59,8 +63,7 @@ const createdOn = new Date().toISOString();
 const playerProfileBulkInsert = dbTransaction((players) => {
   for (const player of players) {
     insertPlayerProfile(player);
-    insertYahooADP({ ...player, createdOn });
-    insertYahooRank({ ...player, createdOn });
+    insertYahooData({ ...player, createdOn });
   }
 });
 playerProfileBulkInsert(players);

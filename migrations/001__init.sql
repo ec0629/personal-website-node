@@ -27,8 +27,9 @@ INSERT INTO player_position (id, abbr) VALUES (1, 'WR'), (2, 'RB'), (3, 'TE'), (
 
 CREATE TABLE player (
   id INTEGER PRIMARY KEY NOT NULL,
-  first_name VARCHAR(255) NOT NULL,
-  last_name VARCHAR(255),
+  first_name VARCHAR(127) NOT NULL,
+  last_name VARCHAR(127),
+  name_matcher VARCHAR(255) NOT NULL,
   uniform_number INTEGER,
   team_id INTEGER NOT null,
   position_id INTEGER NOT NULL,
@@ -38,22 +39,30 @@ CREATE TABLE player (
   UNIQUE (first_name, last_name)
 );
 
-CREATE TABLE player_adp (
+CREATE TABLE yahoo_player_data (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id INTEGER NOT NULL,
-  adp NUMERIC(4, 1) NOT NULL,
-  source VARCHAR(10) NOT NULL,
+  adp REAL NOT NULL,
+  rank INTEGER NOT NULL,
   created_on TEXT NOT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
-  UNIQUE (player_id, created_on, source)
+  UNIQUE (player_id, created_on)
 );
 
-CREATE TABLE player_rank (
+CREATE TABLE underdog_player_data (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL,
+  adp REAL NOT NULL,
+  created_on TEXT NOT NULL,
+  FOREIGN KEY (player_id) REFERENCES player (id),
+  UNIQUE (player_id, created_on)
+);
+
+CREATE TABLE etr_player_data (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id INTEGER NOT NULL,
   rank INTEGER NOT NULL,
-  source VARCHAR(10) NOT NULL,
-  created_on TEXT NULL,
+  created_on TEXT NOT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on)
 );

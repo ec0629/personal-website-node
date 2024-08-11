@@ -1,8 +1,9 @@
 import { dbPrepare, dbRun } from "../db.js";
 
 const insertPlayerProfileStatement = dbPrepare(`
-  insert into player (id, first_name, last_name, uniform_number, image_url, team_id, position_id)
-    values (@playerId, @firstName, @lastName, @uniformNumber, @imageUrl, @teamId, @positionId)
+  insert into player 
+    (id, first_name, last_name, name_matcher, uniform_number, image_url, team_id, position_id)
+    values (@playerId, @firstName, @lastName, @nameMatcher, @uniformNumber, @imageUrl, @teamId, @positionId)
 `);
 
 export function insertPlayerProfile(data) {
@@ -10,30 +11,30 @@ export function insertPlayerProfile(data) {
 }
 
 const insertYahooADPStatement = dbPrepare(`
-  insert into player_adp (player_id, adp, source, created_on)
-    values (@playerId, @adp, 'yahoo', @createdOn)
+  insert into yahoo_player_data (player_id, adp, rank, created_on)
+    values (@playerId, @adp, @rank, @createdOn)
 `);
 
-export function insertYahooADP(data) {
+export function insertYahooData(data) {
   return dbRun(insertYahooADPStatement, data);
 }
 
-const insertUnderdogADPStatement = dbPrepare(`
-  insert into player_adp (player_id, adp, source, created_on)
-    values (@playerId, @adp, 'underdog', @createdOn)
+const insertUnderdogDataStatement = dbPrepare(`
+  insert into underdog_player_data (player_id, adp, created_on)
+    values (@playerId, @adp, @createdOn)
 `);
 
-export function insertUnderdogADP(data) {
-  return dbRun(insertUnderdogADPStatement, data);
+export function insertUnderdogData(data) {
+  return dbRun(insertUnderdogDataStatement, data);
 }
 
-const insertYahooRankStatement = dbPrepare(`
-  insert into player_rank (player_id, rank, source, created_on)
-    values (@playerId, @rank, 'yahoo', @createdOn)
+const insertEtrDataStatement = dbPrepare(`
+  insert into etr_player_data (player_id, rank, created_on)
+    values (@playerId, @rank, @createdOn)
 `);
 
-export function insertYahooRank(data) {
-  return dbRun(insertYahooRankStatement, data);
+export function insertEtrData(data) {
+  return dbRun(insertEtrDataStatement, data);
 }
 
 const getAllNFLTeamsStatement = dbPrepare(`
@@ -52,10 +53,10 @@ export function getAllPlayerPositions() {
   return getAllPlayerPositionsStatement.all();
 }
 
-const getAllPlayerNamesAndIdsStatement = dbPrepare(`
-  SELECT id, first_name as "firstName", last_name as "lastName", position_id as "positionId" from player
+const getPlayerIdFromNameIdStatement = dbPrepare(`
+  SELECT id FROM player WHERE name_matcher=? 
   `);
 
-export function getAllPlayerNamesAndIds() {
-  return getAllPlayerNamesAndIdsStatement.all();
+export function getPlayerIdFromNameMatcher(nameMatcher) {
+  return getPlayerIdFromNameIdStatement.all(nameMatcher);
 }
