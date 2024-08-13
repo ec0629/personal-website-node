@@ -1,18 +1,21 @@
 import express from "express";
 import path from "node:path";
+import crypto from "node:crypto";
 import dotenv from "dotenv";
 import { engine } from "express-handlebars";
 import { notFound } from "@hapi/boom";
 import { getDirName } from "./utils.js";
 import {
   getAccessTokenFromUrl,
-  getOauthRedirectUrl,
+  getOauthRedirectUri,
 } from "./services/oauth.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
 
 const app = express();
+
+const nonce = crypto.randomBytes(20).toString("base64url");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -26,18 +29,22 @@ app.get("/", function (req, res) {
   res.render("home", { title: "JeffSimonitto.com" });
 });
 
-app.get("/login", async function (req, res) {
-  const redirectUrl = await getOauthRedirectUrl();
+app.get("/login", function (req, res) {
+  const redirectUri = getOauthRedirectUri(nonce);
 
-  res.redirect(redirectUrl);
+  res.redirect(redirectUri);
 });
 
 app.get("/callback", async (req, res) => {
-  const oauth2Token = await getAccessTokenFromUrl(
-    `${req.protocol}://${req.get("host")}${req.originalUrl}`
-  );
+  const { error, error_description } = req.query;
 
-  res.json(oauth2Token);
+  if (error) {
+    throw new Error(error_description);
+  }
+
+  const responseBody = await getAccessTokenFromUrl(req.query);
+
+  res.json(responseBody);
 });
 
 app.use((req, res, next) => {
