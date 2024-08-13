@@ -1,11 +1,10 @@
 - `sudo mkdir /var/www`
 - change ownership of /var/www
-    - `sudo chown -R $USER:$USER /var/www`
+  - `sudo chown -R $USER:$USER /var/www`
 - make an application directory
-    - `mkdir /var/www/app`
+  - `mkdir /var/www/app`
 - initialize git repo in `/app`
-    - `git init`
-
+  - `git init`
 
 1. Copy node files to `/var/www/app`
 2. Copy `localhost.conf` to `/etc/nginx/conf.d/`
@@ -17,23 +16,28 @@
 7. `pm2 startup`
 8. copy output and execute
 
-
 # setup crontab
+
+```
 * * * * * sh /var/www/personal-website-node/git-pull.sh 2>&1 | logger -t git-pull-script
+```
 
 - Executes the `git-pull.sh` script.
 - Redirects both stdout and stderr from the script to the logger command.
-- The logger command then writes these messages to the system log with 
-the tag `git-pull-script`.
+- The logger command then writes these messages to the system log with
+  the tag `git-pull-script`.
 - we can view the log at `sudo tail -f /var/log/syslog`
 
 # reviewing the logs from the `git-pull-script` (Systemd system)
+
 `sudo journalctl -t git-pull-script`
 
 ## continuous monitoring (debian)
+
 `tail -f /var/log/syslog | grep git-pull-script`
 
 ### (Red Hat)
+
 `tail -f /var/log/messages | grep git-pull-script`
 
 # Editing `sudoers` file to run commands without password
@@ -43,3 +47,5 @@ the tag `git-pull-script`.
 `your_username ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t`
 `your_username ALL=(ALL) NOPASSWD: /bin/systemctl reload nginx`
 
+openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+ -keyout certs/key.pem -out certs/cert.pem
