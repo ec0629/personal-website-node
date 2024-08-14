@@ -1,16 +1,6 @@
-// import { OAuth2Client } from "@badgateway/oauth2-client";
+import { importJWK, jwtVerify } from "jose";
 import querystring from "node:querystring";
 import { URLSearchParams } from "node:url";
-
-// function getOauthClient() {
-//   return new OAuth2Client({
-//     server: "https://api.login.yahoo.com",
-//     clientId: process.env.YAHOO_CLIENT_ID_OIDC,
-//     clientSecret: process.env.YAHOO_CLIENT_SECRET_OIDC,
-//     authorizationEndpoint: "/oauth2/request_auth",
-//     tokenEndpoint: "/oauth2/get_token",
-//   });
-// }
 
 export function getOauthRedirectUri() {
   const qs = querystring.stringify({
@@ -48,39 +38,61 @@ export async function getAccessTokenFromUrl(reqParams) {
     );
 
     if (!response.ok) {
-      console.error(await response.text());
-      throw new Error(`Response.status: ${response.status}`);
+      // Handle YahooError?
+      // console.error(await response.text());
+      throw new Error(
+        `Response.text: ${await response.text()}; Response.status: ${
+          response.status
+        }`
+      );
     }
 
-    return response.json();
+    const token = await response.json();
+    const jwt = token.id_token;
+
+    console.log(jwt);
+
+    return verifyYahooJwt(jwt);
   } catch (e) {
     console.error(e.message);
   }
 }
 
-// export function getOauthRedirectUri(nonce) {
-//   const client = getOauthClient();
-//   // const codeVerifier = await generateCodeVerifier();
+async function verifyYahooJwt(token) {
+  try {
+    const jwksUrl = "https://api.login.yahoo.com/openid/v1/certs";
 
-//   return client.authorizationCode.getAuthorizeUri({
-//     // URL in the app that the user should get redirected to after authenticating
-//     redirectUri: process.env.REDIRECT_URI,
+    const response = await fetch(jwksUrl);
 
-//     // Optional string that can be sent along to the auth server. This value will
-//     // be sent along with the redirect back to the app verbatim.
-//     // state: 'some-string',
+    if (!response.ok) {
+      // TODO: YAHOO_ERROR?
+      const message = await response.text();
+      throw new Error(
+        `Response message: ${message}. Response status: ${response.status}`
+      );
+    }
 
-//     // codeVerifier,
+    const jwks = await response.json();
 
-//     nonce,
+    const [encodedTokenHeader] = token.split(".");
 
-//     scope: ["openid"],
-//   });
-// }
+    const decodedTokenHeader = JSON.parse(
+      Buffer.from(encodedTokenHeader, "base64").toString("utf8")
+    );
+    const kid = decodedTokenHeader.kid;
 
-// export function getAccessTokenFromUrl(url) {
-//   const client = getOauthClient();
-//   return client.authorizationCode.getTokenFromCodeRedirect(new URL(url), {
-//     redirectUri: process.env.REDIRECT_URI,
-//   });
-// }
+    const jwk = jwks.keys.find((key) => key.kid === kid);
+
+    if (!jwk) {
+      throw new Error("Public key not found in JWKS");
+    }
+
+    const key = await importJWK(jwk, jwk.alg);
+
+    const { payload } = await jwtVerify(token, key);
+
+    console.log("JWT is valid:", payload);
+  } catch (e) {
+    console.error(e);
+  }
+}
