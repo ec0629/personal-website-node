@@ -29,3 +29,7 @@ export function dbClose() {
 export function dbTransaction(func) {
   return db.transaction(func);
 }
+
+export function getDbObject() {
+  return db;
+}

@@ -8,7 +8,6 @@ export function getOauthRedirectUri() {
     redirect_uri: process.env.REDIRECT_URI,
     response_type: "code",
     scope: "openid",
-    // nonce,
   });
 
   return `https://api.login.yahoo.com/oauth2/request_auth?${qs}`;

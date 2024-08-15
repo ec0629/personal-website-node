@@ -17,6 +17,18 @@ const getUserIdByEmail = dbPrepare(`
   select id from user where email = ?
   `);
 
+const getUserProfileByIdStatement = dbPrepare(`
+  select
+    id, email, nickname,
+    given_name as "givenName",
+    family_name as "familyName",
+    access_token as "accessToken",
+    refresh_token as "refreshToken",
+    expires_at as "expiresAt",
+    is_admin as "isAdmin"
+  from user where id=?
+  `);
+
 export function persistUserProfile(user) {
   if (!user.id) {
     const row = dbGet(getUserIdByEmail, [user.email]);
@@ -26,16 +38,22 @@ export function persistUserProfile(user) {
   if (user.id) {
     console.log("Updating user profile.");
     dbRun(updateUserProfileStatement, user);
+    return user;
   } else {
     console.log("Inserting user profile.");
-    insertUserProfile(user);
+    return insertUserProfile(user);
   }
+}
+
+export function getUserProfileById(id) {
+  return dbGet(getUserProfileByIdStatement, [id]);
 }
 
 function insertUserProfile(user) {
   user.id = crypto.randomUUID();
   user.isAdmin = userIsAdmin(user.email);
-  return dbRun(insertUserProfileStatement, user);
+  dbRun(insertUserProfileStatement, user);
+  return user;
 }
 
 function userIsAdmin(email) {
