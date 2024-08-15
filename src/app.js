@@ -8,7 +8,9 @@ import { getDirName } from "./utils.js";
 import {
   getAccessTokenFromUrl,
   getOauthRedirectUri,
+  verifyYahooJwt,
 } from "./services/oauth.js";
+import { persistUserProfile } from "./repositories/userRepo.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
@@ -42,9 +44,26 @@ app.get("/callback", async (req, res) => {
     throw new Error(error_description);
   }
 
-  const responseBody = await getAccessTokenFromUrl(req.query);
+  const { access_token, refresh_token, expires_in, id_token } =
+    await getAccessTokenFromUrl(req.query);
 
-  res.json(responseBody);
+  const expiresAt = Date.now() + expires_in * 1000;
+
+  const jwt = await verifyYahooJwt(id_token);
+
+  const profile = {
+    accessToken: access_token,
+    refreshToken: refresh_token,
+    givenName: jwt.given_name,
+    familyName: jwt.family_name,
+    nickname: jwt.nickname,
+    email: jwt.email,
+    expiresAt,
+  };
+
+  persistUserProfile(profile);
+
+  return res.json(profile);
 });
 
 app.use((req, res, next) => {

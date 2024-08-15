@@ -14,6 +14,10 @@ export function dbRun(statement, data) {
   return statement.run(data);
 }
 
+export function dbGet(statement, data) {
+  return statement.get(data);
+}
+
 export function dbPrepare(statement) {
   return db.prepare(statement);
 }

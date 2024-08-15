@@ -66,3 +66,15 @@ CREATE TABLE etr_player_data (
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on)
 );
+
+CREATE TABLE user (
+  id VARCHAR(32) PRIMARY KEY NOT NULL,
+  email VARCHAR(320) NOT NULL,
+  given_name TEXT,
+  family_name TEXT,
+  nickname TEXT,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  is_admin INTEGER NOT NULL
+);

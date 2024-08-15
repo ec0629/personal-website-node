@@ -47,18 +47,13 @@ export async function getAccessTokenFromUrl(reqParams) {
       );
     }
 
-    const token = await response.json();
-    const jwt = token.id_token;
-
-    console.log(jwt);
-
-    return verifyYahooJwt(jwt);
+    return await response.json();
   } catch (e) {
     console.error(e.message);
   }
 }
 
-async function verifyYahooJwt(token) {
+export async function verifyYahooJwt(token) {
   try {
     const jwksUrl = "https://api.login.yahoo.com/openid/v1/certs";
 
@@ -91,7 +86,7 @@ async function verifyYahooJwt(token) {
 
     const { payload } = await jwtVerify(token, key);
 
-    console.log("JWT is valid:", payload);
+    return payload;
   } catch (e) {
     console.error(e);
   }
