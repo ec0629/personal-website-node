@@ -1,0 +1,47 @@
+table .fa-chevron-up {
+    /* display: none; */
+    visibility: hidden;
+}
+
+table .fa-chevron-down {
+    /* display: none; */
+    visibility: hidden;
+}
+
+table .sort .fa-chevron-down {
+    /* display: unset; */
+    visibility: unset;
+}
+
+table .sort-desc .fa-chevron-up {
+    /* display: unset; */
+    visibility: unset;
+}
+
+table th {
+    cursor: pointer;
+}
+
+table .rb td {
+    background-color: rgba(0, 221, 255, 0.43);
+}
+
+table .te td {
+    background-color: rgba(255, 200, 0, 0.53);
+}
+
+table .wr td {
+    background-color: rgba(0, 255, 64, 0.54);
+}
+
+table .qb td {
+    background-color: rgba(255, 0, 0, 0.42);
+}
+
+table .def td {
+    background-color: rgba(255, 140, 0, 0.52);
+}
+
+table .k td {
+    background-color: rgba(255, 0, 251, 0.44);
+}

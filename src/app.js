@@ -16,6 +16,8 @@ import {
   persistUserProfile,
 } from "./repositories/userRepo.js";
 import { getDbObject } from "./db.js";
+import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
+import { tableMetaData } from "./dbMaps.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
@@ -60,9 +62,8 @@ app.get("/", function (req, res) {
 app.get("/login", function (req, res) {
   const { userId } = req.session;
 
-  if (req.session.userId) {
-    const user = getUserProfileById(userId);
-    return res.send(`<h1>${user.givenName} you are already authenticated!!!`);
+  if (userId) {
+    return res.redirect("/dashboard");
   }
 
   const redirectUri = getOauthRedirectUri();
@@ -96,7 +97,51 @@ app.get("/callback", async (req, res) => {
 
   req.session.userId = user.id;
 
-  return res.json(user);
+  return res.redirect("/dashboard");
+});
+
+app.get("/dashboard", (req, res) => {
+  const { userId } = req.session;
+
+  if (!userId) {
+    // TODO: can I just create a new custom Error instead
+    throw new Error("Authentication Error");
+  }
+
+  const { nickname } = getUserProfileById(userId);
+
+  res.render("dashboard", { nickname });
+});
+
+app.get("/research", (req, res) => {
+  const { userId } = req.session;
+
+  if (!userId) {
+    // TODO: can I just create a new custom Error instead
+    throw new Error("Authentication Error");
+  }
+
+  const { nickname } = getUserProfileById(userId);
+
+  const th = tableMetaData.find((obj) => obj.id === "etr_rank");
+  th.sortClass = "sort";
+  const data = getPlayerRankingsAndADP(th.orderBy, "asc");
+  return res.render("research", { data, nickname, tableMetaData });
+});
+
+app.get("/get_table_body", (req, res) => {
+  const { userId } = req.session;
+
+  if (!userId) {
+    // TODO: can I just create a new custom Error instead
+    throw new Error("Authentication Error");
+  }
+
+  const { direction, colVal } = req.query;
+  const th = tableMetaData.find((obj) => obj.id === colVal);
+  th.sortClass = "sort";
+  const data = getPlayerRankingsAndADP(th.orderBy, direction);
+  return res.render("table", { data });
 });
 
 app.use((req, res, next) => {
