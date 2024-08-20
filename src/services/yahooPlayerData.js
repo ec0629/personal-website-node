@@ -20,7 +20,8 @@ async function getYahooPlayerData() {
   return response["fantasy_content"]["league"]["players"];
 }
 
-function extractPlayerData({ player }) {
+function extractPlayerData({ player }, idx) {
+  const calculatedRank = idx + 1;
   const positionAbbr = player["primary_position"];
   const teamAbbr = player["editorial_team_abbr"];
   const positionId = playerPositions.get(positionAbbr);
@@ -28,8 +29,9 @@ function extractPlayerData({ player }) {
 
   const firstName = player["name"]["first"];
   const lastName = player["name"]["last"];
-
   const nameMatcher = createNameMatcher(firstName.concat(lastName));
+
+  const rank = player["player_ranks"][0]["player_rank"]["rank_value"];
 
   const p = {
     playerId: player["player_id"],
@@ -42,7 +44,8 @@ function extractPlayerData({ player }) {
     adpRound: player["draft_analysis"]["average_round"],
     positionAbbr,
     uniformNumber: player["uniform_number"] || null,
-    rank: player["player_ranks"][0]["player_rank"]["rank_value"],
+    rank,
+    calculatedRank,
     imageUrl: player["image_url"],
     positionId,
     teamId,
@@ -50,6 +53,12 @@ function extractPlayerData({ player }) {
 
   if (p.positionAbbr == "DEF" && p.lastName === null) {
     p.lastName = p.teamName.replace(p.firstName, "").trim();
+  }
+
+  if (Math.abs(rank - calculatedRank) > 1) {
+    console.warn(
+      `Rank differential calculated: ${firstName} ${lastName} rank=${rank}, calculatedRank=${calculatedRank}`
+    );
   }
 
   return p;

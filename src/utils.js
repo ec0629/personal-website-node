@@ -1,6 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
+export function asyncWrapper(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
 export function getDirName(url) {
   const __filename = fileURLToPath(url);
   return dirname(__filename);

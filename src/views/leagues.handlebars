@@ -28,11 +28,26 @@
 
 <div class="container">
   <div class="row vh-100 align-items-center">
-    <div class="col text-center">
-      <h1>Welcome to the Draft Engine</h1>
-
-      <a class="btn btn-primary" href="/login" role="button">Get Started</a>
-
-    </div>
+    {{#each leagues}}
+      <div class="col">
+        <div class="card" style="width: 18rem;">
+          {{#if logo_url}}
+            <img
+              src="{{{logo_url}}}"
+              class="card-img-top"
+              alt="{{name}} logo"
+            />
+          {{else}}
+            <i class="fa-solid fa-user"></i>
+          {{/if}}
+          <div class="card-body">
+            <h5 class="card-title">{{name}}</h5>
+            <p class="card-text">Draft Status: {{draft_status}}</p>
+            <a href="{{league_key}}/dashboard" class="btn btn-primary">Go
+              somewhere</a>
+          </div>
+        </div>
+      </div>
+    {{/each}}
   </div>
 </div>

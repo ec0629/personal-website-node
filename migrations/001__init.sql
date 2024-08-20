@@ -44,6 +44,7 @@ CREATE TABLE yahoo_player_data (
   player_id INTEGER NOT NULL,
   adp REAL NOT NULL,
   rank INTEGER NOT NULL,
+  calculated_rank INTEGER NOT NULL,
   created_on TEXT NOT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on)

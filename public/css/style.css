@@ -1,21 +1,13 @@
-table .fa-chevron-up {
-    /* display: none; */
-    visibility: hidden;
-}
-
-table .fa-chevron-down {
-    /* display: none; */
-    visibility: hidden;
-}
-
-table .sort .fa-chevron-down {
-    /* display: unset; */
-    visibility: unset;
+table .sort-asc .fa-chevron-down {
+    visibility: visible;
 }
 
 table .sort-desc .fa-chevron-up {
-    /* display: unset; */
-    visibility: unset;
+    visibility: visible;
+}
+
+table .fa-chevron-up, table .fa-chevron-down {
+    visibility: hidden;
 }
 
 table th {

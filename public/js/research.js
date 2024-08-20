@@ -1,5 +1,8 @@
 const headers = document.querySelectorAll("th");
 
+const SORT_ASC = "sort-asc";
+const SORT_DESC = "sort-desc";
+
 headers.forEach((el) => {
   el.addEventListener("click", async (e) => {
     console.log(e);
@@ -8,20 +11,20 @@ headers.forEach((el) => {
     const { colVal } = dataset;
     let direction = "asc";
 
-    if (classList.contains("sort")) {
-      classList.replace("sort", "sort-desc");
+    if (classList.contains(SORT_ASC)) {
+      classList.replace(SORT_ASC, SORT_DESC);
       direction = "desc";
     } else {
-      classList.replace("sort-desc", "sort");
+      classList.replace(SORT_DESC, SORT_ASC);
     }
 
-    if (!classList.contains("sort") && !classList.contains("sort-desc")) {
+    if (!classList.contains(SORT_ASC) && !classList.contains(SORT_DESC)) {
       headers.forEach((el) => {
-        el.classList.remove("sort");
-        el.classList.remove("sort-desc");
+        el.classList.remove(SORT_ASC);
+        el.classList.remove(SORT_DESC);
       });
 
-      classList.add("sort");
+      classList.add(SORT_ASC);
     }
 
     const query = new URLSearchParams({

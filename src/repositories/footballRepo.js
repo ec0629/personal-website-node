@@ -11,8 +11,8 @@ export function insertPlayerProfile(data) {
 }
 
 const insertYahooADPStatement = dbPrepare(`
-  insert into yahoo_player_data (player_id, adp, rank, created_on)
-    values (@playerId, @adp, @rank, @createdOn)
+  insert into yahoo_player_data (player_id, adp, rank, calculated_rank, created_on)
+    values (@playerId, @adp, @rank, @calculatedRank, @createdOn)
 `);
 
 export function insertYahooData(data) {
@@ -68,11 +68,11 @@ export function getPlayerRankingsAndADP(orderBy, direction) {
       etr.rank as "etrRank",
       ud.adp as "udAdp",
       y.adp as "yahooAdp",
-      y.rank as "yahooRank",
+      y.calculated_rank as "yahooRank",
       concat_ws(' ', p.first_name, p.last_name) as "name",
       pos.abbr as "position",
       lower(pos.abbr) as 'positionClass',
-      y.rank - etr.rank as "rankDiff",
+      y.calculated_rank - etr.rank as "rankDiff",
       round(y.adp - ud.adp, 1) as "adpDiff"
     from etr_player_data as etr
     join underdog_player_data as ud on etr.player_id=ud.player_id
