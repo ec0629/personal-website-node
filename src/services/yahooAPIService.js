@@ -1,18 +1,35 @@
 import { importJWK, jwtVerify } from "jose";
-import { makeOAuthRequestForJson } from "./oauthClient.js";
+import oauth from "./oauth.js";
 
-export async function getLeagueSettings(accessToken) {
+export function getYahooOAuthConfig() {
+  return {
+    clientId: process.env.YAHOO_CLIENT_ID_OIDC,
+    clientSecret: process.env.YAHOO_CLIENT_SECRET_OIDC,
+    redirectUri: process.env.REDIRECT_URI,
+  };
+}
+
+export function getYahooAuthorizationUrl() {
+  return oauth.getAuthorizationUrl(getYahooOAuthConfig());
+}
+
+export function requestYahooAccessToken(code) {
+  const config = getYahooOAuthConfig();
+  return oauth.requestAccessToken({ code, ...config });
+}
+
+export async function getLeagueSettings(client) {
   const leagueKey = "449.l.199297";
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/settings?format=json_f`;
 
-  return makeOAuthRequestForJson(accessToken, url);
+  return client.fetchJson(url);
 }
 
-export async function getUsersLeagues(accessToken) {
+export async function getUsersLeagues(client) {
   const url =
     "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;out=leagues?format=json_f";
 
-  return makeOAuthRequestForJson(accessToken, url);
+  return client.fetchJson(url);
 }
 
 export async function verifyYahooJwtAndDecode(token) {

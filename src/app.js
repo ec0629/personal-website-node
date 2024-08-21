@@ -6,19 +6,15 @@ import sqlite3Session from "better-sqlite3-session-store";
 import { engine } from "express-handlebars";
 import { notFound } from "@hapi/boom";
 import { asyncWrapper, getDirName } from "./utils.js";
-import {
-  getUserProfileById,
-  persistUserProfile,
-} from "./repositories/userRepo.js";
+import oauth from "./services/oauth.js";
 import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
-  getOauthRedirectUri,
-  requestAccessToken,
-} from "./services/oauthClient.js";
-import {
   getUsersLeagues,
+  getYahooAuthorizationUrl,
+  getYahooOAuthConfig,
+  requestYahooAccessToken,
   verifyYahooJwtAndDecode,
 } from "./services/yahooAPIService.js";
 
@@ -63,15 +59,13 @@ app.get("/", function (req, res) {
 });
 
 app.get("/login", function (req, res) {
-  const { userId } = req.session;
+  const { user } = req.session;
 
-  if (userId) {
+  if (user) {
     return res.redirect("/leagues");
   }
 
-  const redirectUri = getOauthRedirectUri();
-
-  return res.redirect(redirectUri);
+  return res.redirect(getYahooAuthorizationUrl());
 });
 
 app.get(
@@ -85,24 +79,22 @@ app.get(
 
     const { code } = req.query;
 
-    const { access_token, refresh_token, expires_in, id_token } =
-      await requestAccessToken(code);
-
-    const expiresAt = Date.now() + expires_in * 1000;
+    const { access_token, refresh_token, expires_at, id_token } =
+      await requestYahooAccessToken(code);
 
     const jwt = await verifyYahooJwtAndDecode(id_token);
 
-    const user = persistUserProfile({
-      accessToken: access_token,
-      refreshToken: refresh_token,
+    req.session.user = {
       givenName: jwt.given_name,
       familyName: jwt.family_name,
       nickname: jwt.nickname,
       email: jwt.email,
-      expiresAt,
-    });
-
-    req.session.userId = user.id;
+      tokens: {
+        accessToken: access_token,
+        refreshToken: refresh_token,
+        expiresAt: expires_at,
+      },
+    };
 
     return res.redirect("/leagues");
   })
@@ -111,14 +103,15 @@ app.get(
 app.get(
   "/leagues",
   asyncWrapper(async (req, res) => {
-    const { userId } = req.session;
+    const { user } = req.session;
 
-    if (!userId) {
+    if (!user) {
       return res.redirect("/");
     }
 
-    const { nickname, accessToken } = getUserProfileById(userId);
-    const response = await getUsersLeagues(accessToken);
+    const { nickname, tokens } = user;
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const response = await getUsersLeagues(client);
     const userInfo = response?.fantasy_content?.users[0]?.user;
 
     if (!userInfo) {
@@ -131,13 +124,13 @@ app.get(
 );
 
 app.get("/research", (req, res) => {
-  const { userId } = req.session;
+  const { user } = req.session;
 
-  if (!userId) {
+  if (!user) {
     return res.redirect("/");
   }
 
-  const { nickname } = getUserProfileById(userId);
+  const { nickname } = user;
 
   const th = tableMetaData.find((obj) => obj.id === "etr_rank");
   th.sortClass = "sort-asc";
