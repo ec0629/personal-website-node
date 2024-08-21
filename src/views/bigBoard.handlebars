@@ -1,0 +1,38 @@
+{{> navBar}}
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <table class="table">
+        <thead>
+          <tr>
+            {{#each tableMetaData}}
+
+              <th
+                scope="col"
+                class="{{sortClass}}"
+                data-col-val="{{id}}"
+              >{{headerName}}
+                {{{sortAsc}}}{{{sortDesc}}}</th>
+
+            {{/each}}
+          </tr>
+        </thead>
+        <tbody>
+          {{#each playerData}}
+            <tr class="{{positionClass}}">
+              <td>{{name}}</td>
+              <td>{{position}}</td>
+              <td>{{etrRank}}</td>
+              <td>{{yahooRank}}</td>
+              <td>{{rankDiff}}</td>
+              <td>{{udAdp}}</td>
+              <td>{{yahooAdp}}</td>
+              <td>{{adpDiff}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="/js/research.js"></script>

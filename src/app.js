@@ -11,6 +11,7 @@ import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
+  getLeagueSettings,
   getUsersLeagues,
   getYahooAuthorizationUrl,
   getYahooOAuthConfig,
@@ -109,7 +110,7 @@ app.get(
       return res.redirect("/");
     }
 
-    const { nickname, tokens } = user;
+    const { tokens } = user;
     const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
     const response = await getUsersLeagues(client);
     const userInfo = response?.fantasy_content?.users[0]?.user;
@@ -119,26 +120,57 @@ app.get(
     }
 
     const leagues = userInfo?.games.at(-1)?.game?.leagues.map((l) => l.league);
-    res.render("leagues", { nickname, leagues });
+    res.render("leagues", { leagues });
   })
 );
 
-app.get("/research", (req, res) => {
+app.get(
+  "/league/:leagueKey/dashboard",
+  asyncWrapper(async (req, res) => {
+    const { user } = req.session;
+
+    if (!user) {
+      return res.redirect("/");
+    }
+
+    const { leagueKey } = req.params;
+
+    const { tokens } = user;
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const response = await getLeagueSettings(leagueKey, client);
+    const {
+      draft_status: draftStatus,
+      name: leagueName,
+      settings,
+    } = response.fantasy_content.league;
+    const { draft_time: draftTime, roster_positions } = settings;
+    const rosterPositions = roster_positions.map((p) => p.roster_position);
+    const viewData = {
+      draftStatus,
+      draftTime,
+      leagueName,
+      rosterPositions,
+      leagueKey,
+      draftCompleted: draftStatus === "postdraft",
+    };
+    return res.render("dashboard", viewData);
+  })
+);
+
+app.get("/league/:leagueKey/big-board", (req, res) => {
   const { user } = req.session;
 
   if (!user) {
     return res.redirect("/");
   }
 
-  const { nickname } = user;
-
   const th = tableMetaData.find((obj) => obj.id === "etr_rank");
   th.sortClass = "sort-asc";
-  const data = getPlayerRankingsAndADP(th.orderBy, "asc");
-  return res.render("research", { data, nickname, tableMetaData });
+  const playerData = getPlayerRankingsAndADP(th.orderBy, "asc");
+  return res.render("bigBoard", { playerData, tableMetaData });
 });
 
-app.get("/get_table_body", (req, res) => {
+app.get("/get-table-body", (req, res) => {
   const { userId } = req.session;
 
   if (!userId) {

@@ -18,8 +18,7 @@ export function requestYahooAccessToken(code) {
   return oauth.requestAccessToken({ code, ...config });
 }
 
-export async function getLeagueSettings(client) {
-  const leagueKey = "449.l.199297";
+export async function getLeagueSettings(leagueKey, client) {
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/settings?format=json_f`;
 
   return client.fetchJson(url);

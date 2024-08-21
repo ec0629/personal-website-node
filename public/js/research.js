@@ -33,7 +33,7 @@ headers.forEach((el) => {
     });
 
     try {
-      const response = await fetch(`/get_table_body?${query}`);
+      const response = await fetch(`/get-table-body?${query}`);
 
       if (!response.ok) {
         throw new Error(
