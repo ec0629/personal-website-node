@@ -29,9 +29,45 @@ export function requestYahooAccessToken(code) {
 }
 
 export async function getLeagueSettings(leagueKey, client) {
-  const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/settings?format=json_f`;
+  const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=settings,draftresults,teams?format=json_f`;
 
-  return client.fetchJson(url);
+  const response = await client.fetchJson(url);
+
+  const { league: l } = response.fantasy_content;
+  const { settings } = response.fantasy_content.league;
+
+  const viewData = {
+    leagueName: l.name,
+    leagueId: l.league_id,
+    numTeams: l.num_teams,
+    leagueLogo: l.logo_url,
+    draftStatus: l.draft_status,
+    draftCompleted: l.draft_status === "postdraft",
+    draftTime: settings.draft_time * 1000,
+    rosterPositions: settings.roster_positions.map((p) => p.roster_position),
+    leagueKey,
+    teams: l.teams.map((t) => {
+      const team = t.team;
+      return {
+        name: team.name,
+        teamId: parseInt(team.team_id),
+        teamKey: team.team_key,
+        draftPosition: team.draft_position,
+        teamLogo: team.team_logos[0].team_logo.url,
+      };
+    }),
+    draftResults: l.draft_results.map((d) => {
+      const { draft_result: dr } = d;
+      return {
+        pick: dr.pick,
+        playerKey: dr.player_key,
+        round: dr.round,
+        teamKey: dr.team_key,
+      };
+    }),
+  };
+
+  return viewData;
 }
 
 export async function getUsersLeaguesAndTeams(client) {
@@ -40,7 +76,42 @@ export async function getUsersLeaguesAndTeams(client) {
   const url =
     "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl/leagues;out=settings,draftresults/teams/roster?format=json_f";
 
-  return client.fetchJson(url);
+  const response = await client.fetchJson(url);
+
+  const userInfo = response?.fantasy_content?.users[0]?.user;
+
+  if (!userInfo) {
+    throw new Error("No user information provided by request.");
+  }
+
+  return userInfo?.games.at(-1)?.game?.leagues.map((l) => {
+    const {
+      draft_status,
+      league_id,
+      league_key,
+      name,
+      num_teams,
+      settings,
+      teams,
+    } = l.league;
+    const draftDate = new Date(parseInt(settings.draft_time) * 1000);
+    const team = teams[0].team;
+    return {
+      leagueId: league_id,
+      leagueKey: league_key,
+      name,
+      numTeams: num_teams,
+      draftStatus: draft_status,
+      draftMessage:
+        draft_status === "postdraft" ? "Completed" : draftDate.toLocaleString(),
+      draftTime: settings.draft_time,
+      team: {
+        name: team.name,
+        teamId: team.team_id,
+        logoUrl: team.team_logos[0]?.team_logo?.url,
+      },
+    };
+  });
 }
 
 export async function verifyYahooJwtAndDecode(token) {
