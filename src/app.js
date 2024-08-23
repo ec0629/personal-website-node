@@ -12,7 +12,7 @@ import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
   getLeagueSettings,
-  getUsersLeagues,
+  getUsersLeaguesAndTeams,
   getYahooAuthorizationUrl,
   getYahooOAuthConfig,
   requestYahooAccessToken,
@@ -112,15 +112,44 @@ app.get(
 
     const { tokens } = user;
     const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
-    const response = await getUsersLeagues(client);
+    const response = await getUsersLeaguesAndTeams(client);
     const userInfo = response?.fantasy_content?.users[0]?.user;
 
     if (!userInfo) {
       throw new Error("No user information provided by request.");
     }
 
-    const leagues = userInfo?.games.at(-1)?.game?.leagues.map((l) => l.league);
-    res.render("leagues", { leagues });
+    const leagues = userInfo?.games.at(-1)?.game?.leagues.map((l) => {
+      const {
+        draft_status,
+        league_id,
+        league_key,
+        name,
+        num_teams,
+        settings,
+        teams,
+      } = l.league;
+      const draftDate = new Date(parseInt(settings.draft_time) * 1000);
+      const team = teams[0].team;
+      return {
+        leagueId: league_id,
+        leagueKey: league_key,
+        name,
+        numTeams: num_teams,
+        draftStatus:
+          draft_status === "postdraft"
+            ? "Completed"
+            : draftDate.toLocaleString(),
+        draftTime: settings.draft_time,
+        team: {
+          name: team.name,
+          teamId: team.team_id,
+          logoUrl: team.team_logos[0]?.team_logo?.url,
+        },
+      };
+    });
+
+    return res.render("leagues", { leagues });
   })
 );
 
@@ -143,11 +172,11 @@ app.get(
       name: leagueName,
       settings,
     } = response.fantasy_content.league;
-    const { draft_time: draftTime, roster_positions } = settings;
+    const { draft_time, roster_positions } = settings;
     const rosterPositions = roster_positions.map((p) => p.roster_position);
     const viewData = {
       draftStatus,
-      draftTime,
+      draftTime: draft_time * 1000,
       leagueName,
       rosterPositions,
       leagueKey,

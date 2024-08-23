@@ -1,7 +1,21 @@
 {{> navBar}}
 
-{{#if draftCompleted}}
-<h1>Your draft has already completed!</h1>
+{{#if draftCompleted}}<div class="container">
+  <div class="row vh-100 align-items-center">
+    <div class="col text-center">
+      <h1>Your draft has already completed!</h1>
+    </div>
+  </div>
+</div>
 {{else}}
-{{draftTime}}
+<div class="container">
+  <div class="row vh-100 align-items-center">
+    <div class="col text-center">
+      <h1>Your draft will begin in:</h1>
+      <div id="draftTime" data-value="{{draftTime}}"></div>
+      <h2 id="countdown"></h2>
+    </div>
+  </div>
+</div>
+<script src="/js/dashboard.js"></script>
 {{/if}}

@@ -1,6 +1,16 @@
 import { importJWK, jwtVerify } from "jose";
 import oauth from "./oauth.js";
 
+//   # a = yahoo.get(
+//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/players;start=0;count=100"
+//   # )
+//   # a = yahoo.get(
+//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/teams;out=roster"
+//   # )
+//   # a = yahoo.get(
+//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/draftresults"
+//   # )
+
 export function getYahooOAuthConfig() {
   return {
     clientId: process.env.YAHOO_CLIENT_ID_OIDC,
@@ -24,9 +34,11 @@ export async function getLeagueSettings(leagueKey, client) {
   return client.fetchJson(url);
 }
 
-export async function getUsersLeagues(client) {
+export async function getUsersLeaguesAndTeams(client) {
+  // const url =
+  //   "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl;out=leagues,teams?format=json_f";
   const url =
-    "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;out=leagues?format=json_f";
+    "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl/leagues;out=settings,draftresults/teams/roster?format=json_f";
 
   return client.fetchJson(url);
 }
