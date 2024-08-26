@@ -1,5 +1,7 @@
+-- MAKE ALL PRIMARY KEY INTO A PROPERLY NAMED PRIMARY KEY CONSTRAINT
+
 CREATE TABLE nfl_team (
-  id INTEGER PRIMARY KEY NOT NULL,
+  id INTEGER PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   abbr VARCHAR(3) NOT NULL
 );
@@ -19,14 +21,14 @@ INSERT INTO nfl_team (id, abbr, name) VALUES
    
 
 CREATE TABLE player_position (
-  id INTEGER PRIMARY KEY NOT NULL,
+  id INTEGER PRIMARY KEY,
   abbr VARCHAR(3) NOT NULL
 );
 
 INSERT INTO player_position (id, abbr) VALUES (1, 'WR'), (2, 'RB'), (3, 'TE'), (4, 'QB'), (5, 'DEF'), (6, 'K');
 
 CREATE TABLE player (
-  id INTEGER PRIMARY KEY NOT NULL,
+  id INTEGER PRIMARY KEY,
   first_name VARCHAR(127) NOT NULL,
   last_name VARCHAR(127),
   name_matcher VARCHAR(255) NOT NULL,
@@ -51,7 +53,7 @@ CREATE TABLE yahoo_player_data (
 );
 
 CREATE TABLE underdog_player_data (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY,
   player_id INTEGER NOT NULL,
   adp REAL NOT NULL,
   created_on TEXT NOT NULL,
@@ -60,10 +62,47 @@ CREATE TABLE underdog_player_data (
 );
 
 CREATE TABLE etr_player_data (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY,
   player_id INTEGER NOT NULL,
   rank INTEGER NOT NULL,
   created_on TEXT NOT NULL,
   FOREIGN KEY (player_id) REFERENCES player (id),
   UNIQUE (player_id, created_on)
+);
+
+CREATE TABLE draft_league (
+  -- TODO: use rowIds instead
+  league_key TEXT PRIMARY KEY,
+  league_id INTEGER NOT NULL,
+  league_name TEXT NOT NULL,
+  league_logo TEXT,
+  draft_status TEXT NOT NULL,
+  draft_time INTEGER NOT NULL,
+  last_accessed INTEGER NOT NULL
+);
+
+CREATE TABLE draft_team (
+  -- TODO: use rowIds instead
+  team_key TEXT PRIMARY KEY,
+  league_key TEXT NOT NULL,
+  team_name TEXT NOT NULL,
+  draft_position INTEGER,
+  team_logo TEXT NOT NULL,
+  FOREIGN KEY (league_key) REFERENCES draft_league (league_key)
+    ON UPDATE restrict
+    ON DELETE cascade
+);
+
+CREATE TABLE draft_selection (
+  id INTEGER PRIMARY KEY,
+  team_key TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  pick INTEGER NOT NULL,
+  round INTEGER NOT NULL,
+  FOREIGN KEY (team_key) REFERENCES draft_team (team_key)
+    ON UPDATE restrict
+    ON DELETE cascade,
+  FOREIGN KEY (player_id) REFERENCES player (id)
+    ON UPDATE restrict
+    ON DELETE cascade
 );

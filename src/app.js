@@ -11,13 +11,18 @@ import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
-  getLeagueSettings,
+  getLeagueDraftData,
   getUsersLeaguesAndTeams,
   getYahooAuthorizationUrl,
   getYahooOAuthConfig,
   requestYahooAccessToken,
   verifyYahooJwtAndDecode,
 } from "./services/yahooAPIService.js";
+import {
+  getDraftData,
+  hasLeagueData,
+  insertDraftData,
+} from "./repositories/draftRepo.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
@@ -129,16 +134,20 @@ app.get(
 
     const { leagueKey } = req.params;
 
-    const { tokens } = user;
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
-    const viewData = await getLeagueSettings(leagueKey, client);
-
-    if (viewData.draftCompleted) {
-      // return res.render("draft-summary", viewData);
-      return res.json(viewData);
+    let leagueDraftData;
+    if (hasLeagueData(leagueKey)) {
+      leagueDraftData = getDraftData(leagueKey);
     } else {
-      return res.render("countdown", viewData);
+      const { tokens } = user;
+      const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+      leagueDraftData = await getLeagueDraftData(leagueKey, client);
+
+      if (["draft", "postdraft"].includes(leagueDraftData.draftStatus)) {
+        insertDraftData(leagueDraftData);
+      }
     }
+
+    return res.json(leagueDraftData);
   })
 );
 

@@ -28,7 +28,7 @@ export function requestYahooAccessToken(code) {
   return oauth.requestAccessToken({ code, ...config });
 }
 
-export async function getLeagueSettings(leagueKey, client) {
+export async function getLeagueDraftData(leagueKey, client) {
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=settings,draftresults,teams?format=json_f`;
 
   const response = await client.fetchJson(url);
@@ -36,20 +36,18 @@ export async function getLeagueSettings(leagueKey, client) {
   const { league: l } = response.fantasy_content;
   const { settings } = response.fantasy_content.league;
 
-  const viewData = {
+  return {
     leagueName: l.name,
     leagueId: l.league_id,
-    numTeams: l.num_teams,
     leagueLogo: l.logo_url,
-    draftStatus: l.draft_status,
-    draftCompleted: l.draft_status === "postdraft",
+    draftStatus: l.draft_status, // possible values: predraft, draft, postdraft
     draftTime: settings.draft_time * 1000,
-    rosterPositions: settings.roster_positions.map((p) => p.roster_position),
+    // rosterPositions: settings.roster_positions.map((p) => p.roster_position),
     leagueKey,
     teams: l.teams.map((t) => {
       const team = t.team;
       return {
-        name: team.name,
+        teamName: team.name,
         teamId: parseInt(team.team_id),
         teamKey: team.team_key,
         draftPosition: team.draft_position,
@@ -57,24 +55,23 @@ export async function getLeagueSettings(leagueKey, client) {
       };
     }),
     draftResults: l.draft_results.map((d) => {
-      const { draft_result: dr } = d;
+      const { pick, round, player_key, team_key } = d.draft_result;
+      const [gameId, l, leagueId] = team_key;
+      const playerId = player_key.split(".").at(-1);
       return {
-        pick: dr.pick,
-        playerKey: dr.player_key,
-        round: dr.round,
-        teamKey: dr.team_key,
+        pick,
+        round,
+        leagueKey: [gameId, l, leagueId].join("."),
+        teamKey: team_key,
+        playerId,
       };
     }),
   };
-
-  return viewData;
 }
 
 export async function getUsersLeaguesAndTeams(client) {
-  // const url =
-  //   "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl;out=leagues,teams?format=json_f";
   const url =
-    "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl/leagues;out=settings,draftresults/teams/roster?format=json_f";
+    "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;seasons=2024;is_available=1;game_codes=nfl/leagues;out=settings/teams?format=json_f";
 
   const response = await client.fetchJson(url);
 
@@ -84,26 +81,16 @@ export async function getUsersLeaguesAndTeams(client) {
     throw new Error("No user information provided by request.");
   }
 
-  return userInfo?.games.at(-1)?.game?.leagues.map((l) => {
-    const {
-      draft_status,
-      league_id,
-      league_key,
-      name,
-      num_teams,
-      settings,
-      teams,
-    } = l.league;
-    const draftDate = new Date(parseInt(settings.draft_time) * 1000);
+  // TODO: can i insert the leagues into the database here???
+  return userInfo?.games[0]?.game?.leagues.map((l) => {
+    const { draft_status, league_id, league_key, name, settings, teams } =
+      l.league;
     const team = teams[0].team;
     return {
       leagueId: league_id,
       leagueKey: league_key,
-      name,
-      numTeams: num_teams,
+      leagueName: name,
       draftStatus: draft_status,
-      draftMessage:
-        draft_status === "postdraft" ? "Completed" : draftDate.toLocaleString(),
       draftTime: settings.draft_time,
       team: {
         name: team.name,
