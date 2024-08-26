@@ -84,9 +84,10 @@ CREATE TABLE draft_league (
 CREATE TABLE draft_team (
   -- TODO: use rowIds instead
   team_key TEXT PRIMARY KEY,
+  team_id INTEGER NOT NULL,
   league_key TEXT NOT NULL,
   team_name TEXT NOT NULL,
-  draft_position INTEGER,
+  draft_position INTEGER NOT NULL,
   team_logo TEXT NOT NULL,
   FOREIGN KEY (league_key) REFERENCES draft_league (league_key)
     ON UPDATE restrict
@@ -95,10 +96,14 @@ CREATE TABLE draft_team (
 
 CREATE TABLE draft_selection (
   id INTEGER PRIMARY KEY,
+  league_key TEXT NOT NULL,
   team_key TEXT NOT NULL,
   player_id INTEGER NOT NULL,
   pick INTEGER NOT NULL,
   round INTEGER NOT NULL,
+  FOREIGN KEY (league_key) REFERENCES draft_league (league_key)
+    ON UPDATE restrict
+    ON DELETE cascade,
   FOREIGN KEY (team_key) REFERENCES draft_team (team_key)
     ON UPDATE restrict
     ON DELETE cascade,

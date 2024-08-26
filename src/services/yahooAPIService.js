@@ -56,7 +56,7 @@ export async function getLeagueDraftData(leagueKey, client) {
     }),
     draftResults: l.draft_results.map((d) => {
       const { pick, round, player_key, team_key } = d.draft_result;
-      const [gameId, l, leagueId] = team_key;
+      const [gameId, l, leagueId] = team_key.split(".");
       const playerId = player_key.split(".").at(-1);
       return {
         pick,
