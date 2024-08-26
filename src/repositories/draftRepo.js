@@ -86,15 +86,28 @@ function insertDraftSelection(selection, leagueKey) {
   return transaction({ leagueKey, ...selection });
 }
 
+const deleteLeagueStatement = dbPrepare(`
+  delete from draft_league where league_key=?  
+`);
+
+function deleteLeague(leagueKey) {
+  dbRun(deleteLeagueStatement, leagueKey);
+}
+
 setInterval(() => {
   const leagueAccessTimes = getLeagueAccessTimes();
   for (const { leagueKey, lastAccessed } of leagueAccessTimes) {
     const expired = lastAccessed + 3 * 3600 * 1000 < Date.now(); // allow 3 hours between accesses
-    console.log(
-      `League key: ${leagueKey}, Last accessed: ${lastAccessed}, Expired: ${expired}`
-    );
+    if (expired) {
+      console.log(
+        `Deleting league with key: ${leagueKey}, last accessed: ${new Date(
+          lastAccessed
+        ).toISOString()}`
+      );
+      deleteLeague(leagueKey);
+    }
   }
-}, 1 * 60 * 1000); // Every 1 minutes
+}, 15 * 60 * 1000); // Every 1 minutes
 
 const getDraftLeagueStatement = dbPrepare(`
   select
