@@ -42,7 +42,11 @@ export async function getLeagueDraftData(leagueKey, client) {
     leagueLogo: l.logo_url,
     draftStatus: l.draft_status, // possible values: predraft, draft, postdraft
     draftTime: settings.draft_time * 1000,
-    // rosterPositions: settings.roster_positions.map((p) => p.roster_position),
+    totalDraftRounds: settings.roster_positions.reduce(
+      (count, { roster_position: rp }) =>
+        rp.position !== "IR" ? count + rp.count : count,
+      0
+    ),
     leagueKey,
     teams: l.teams.map((t) => {
       const team = t.team;
@@ -54,7 +58,7 @@ export async function getLeagueDraftData(leagueKey, client) {
         teamLogo: team.team_logos[0].team_logo.url,
       };
     }),
-    draftResults: l.draft_results.map((d) => {
+    draftSelections: l.draft_results.map((d) => {
       const { pick, round, player_key, team_key } = d.draft_result;
       const [gameId, l, leagueId] = team_key.split(".");
       const playerId = player_key.split(".").at(-1);

@@ -78,6 +78,7 @@ CREATE TABLE draft_league (
   league_logo TEXT,
   draft_status TEXT NOT NULL,
   draft_time INTEGER NOT NULL,
+  total_draft_rounds INTEGER NOT NULL,
   last_accessed INTEGER NOT NULL
 );
 

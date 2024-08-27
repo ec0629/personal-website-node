@@ -10,7 +10,7 @@ export function insertDraftData(league) {
       insertDraftTeam({ leagueKey, ...team });
     }
 
-    for (const selection of league.draftResults) {
+    for (const selection of league.draftSelections) {
       insertDraftSelection(selection);
     }
   })();
@@ -53,8 +53,8 @@ function getLeagueAccessTimes() {
 
 const insertDraftLeagueStatement = dbPrepare(`
   insert into draft_league 
-    (league_key, league_id, league_name, league_logo, draft_status, draft_time, last_accessed)
-    values (@leagueKey, @leagueId, @leagueName, @leagueLogo, @draftStatus, @draftTime, @lastAccessed)
+    (league_key, league_id, league_name, league_logo, draft_status, draft_time, total_draft_rounds, last_accessed)
+    values (@leagueKey, @leagueId, @leagueName, @leagueLogo, @draftStatus, @draftTime, @totalDraftRounds, @lastAccessed)
 `);
 
 function insertDraftLeague(league) {
@@ -116,7 +116,8 @@ const getDraftLeagueStatement = dbPrepare(`
     league_id as "leagueId",
     league_logo as "leagueLogo",
     draft_status as "draftStatus",
-    draft_time as "draftTime"
+    draft_time as "draftTime",
+    total_draft_rounds as "totalDraftRounds"
   from draft_league
   where league_key=?
 `);
@@ -154,21 +155,9 @@ const getDraftSelectionsStatement = dbPrepare(`
 export function getDraftData(leagueKey) {
   const league = dbGet(getDraftLeagueStatement, leagueKey);
   const teams = getDraftTeamsStatement.all(leagueKey);
-
-  const map = new Map();
-  for (const team of teams) {
-    team.draftSelections = [];
-    map.set(team.teamKey, team.draftSelections);
-  }
-
-  const draftedPlayers = getDraftSelectionsStatement.all(leagueKey);
-
-  for (const player of draftedPlayers) {
-    const draftSelections = map.get(player.teamKey);
-    draftSelections.push(player);
-  }
-
+  const draftSelections = getDraftSelectionsStatement.all(leagueKey);
   league.teams = teams;
+  league.draftSelections = draftSelections;
 
   return league;
 }

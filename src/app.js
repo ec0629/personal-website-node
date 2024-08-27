@@ -140,14 +140,61 @@ app.get(
     } else {
       const { tokens } = user;
       const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
-      leagueDraftData = await getLeagueDraftData(leagueKey, client);
+      const apiData = await getLeagueDraftData(leagueKey, client);
 
-      if (["draft", "postdraft"].includes(leagueDraftData.draftStatus)) {
-        insertDraftData(leagueDraftData);
+      if (["draft", "postdraft"].includes(apiData.draftStatus)) {
+        insertDraftData(apiData);
+        leagueDraftData = getDraftData(leagueKey);
       }
     }
 
-    return res.json(leagueDraftData);
+    leagueDraftData.draftPositionSet = Boolean(
+      leagueDraftData.teams[0]?.draftPosition
+    );
+
+    leagueDraftData.draftLive = leagueDraftData.draftStatus === "draft";
+    leagueDraftData.draftComplete = leagueDraftData.draftStatus === "postdraft";
+
+    if (!leagueDraftData.draftPositionSet) {
+      const countDownDate = new Date(leagueDraftData.draftTime).getTime();
+      const now = new Date().getTime();
+      const distance = countDownDate - now;
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      leagueDraftData.countdownString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    const start = leagueDraftData.draftSelections.length;
+    const stop =
+      leagueDraftData.totalDraftRounds * leagueDraftData.teams.length;
+
+    for (let i = start; i < stop; i += 1) {
+      fullDraftBoard.push({
+        pick: i + 1,
+        player: null,
+      });
+    }
+
+    const numTeams = leagueDraftData.teams.length;
+
+    const fullDraftBoard = [];
+
+    for (let i = 0; i < stop; i += numTeams) {
+      const round = i / numTeams + 1;
+      const temp = leagueDraftData.draftSelections.slice(i, i + numTeams);
+      temp.unshift({ roundCard: `Round: ${round}` });
+      fullDraftBoard.push(temp);
+    }
+
+    leagueDraftData.draftSelections = fullDraftBoard;
+
+    return res.render("dashboard", leagueDraftData);
   })
 );
 

@@ -1,3 +1,32 @@
+.draft-summary {
+    font-size: 10px;
+}
+
+.draft-summary .card-body {
+    padding: 0.25rem;
+}
+
+.draft-summary .card {
+    margin: 0.25rem;
+    width: 7rem;
+}
+
+.draft-summary .wr {
+    background-color: orange;
+}
+
+.draft-summary .qb {
+    background-color: lightcoral;
+}
+
+.draft-summary .te {
+    background-color: dodgerblue;
+}
+
+.draft-summary .rb {
+    background-color: aquamarine;
+}
+
 table .sort-asc .fa-chevron-down {
     visibility: visible;
 }
