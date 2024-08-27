@@ -12,6 +12,7 @@
   </div>
   <script src="/js/countdown.js"></script>
 {{else}}
+  <div id="leagueKey" data-value="{{leagueKey}}"></div>
   <div class="container-fluid draft-summary">
     <div class="row justify-content-center">
       <div class="card" style="width: 5rem; visibility: hidden;">
@@ -38,12 +39,24 @@
               </div>
             </div>
           {{else}}
-            <div class="card {{position}}" style="width: 6rem;">
+            <div
+              id="pick-{{pick}}"
+              class="card {{position}}"
+              style="width: 6rem;"
+            >
+              <div class="card-header">
+                {{pick}}
+              </div>
               <div class="card-body">
-                <p class="card-text">{{firstName}}<br />{{lastName}}<br
-                  />{{position}}
+                <p class="card-text"><span
+                    class="firstName"
+                  >{{firstName}}</span><br /><span
+                    class="lastName"
+                  >{{lastName}}</span><br /><span
+                    class="position"
+                  >{{position}}</span>
                   -
-                  {{teamAbbr}}</p>
+                  <span class="teamAbbr">{{teamAbbr}}</span></p>
               </div>
             </div>
           {{/if}}
@@ -51,4 +64,5 @@
       </div>
     {{/each}}
   </div>
+  <script src="/js/dashboard.js"></script>
 {{/if}}

@@ -11,6 +11,7 @@ import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
+  getDraftUpdates,
   getLeagueDraftData,
   getUsersLeaguesAndTeams,
   getYahooAuthorizationUrl,
@@ -145,6 +146,8 @@ app.get(
       if (["draft", "postdraft"].includes(apiData.draftStatus)) {
         insertDraftData(apiData);
         leagueDraftData = getDraftData(leagueKey);
+      } else {
+        leagueDraftData = apiData;
       }
     }
 
@@ -175,7 +178,7 @@ app.get(
       leagueDraftData.totalDraftRounds * leagueDraftData.teams.length;
 
     for (let i = start; i < stop; i += 1) {
-      fullDraftBoard.push({
+      leagueDraftData.draftSelections.push({
         pick: i + 1,
         player: null,
       });
@@ -187,7 +190,10 @@ app.get(
 
     for (let i = 0; i < stop; i += numTeams) {
       const round = i / numTeams + 1;
-      const temp = leagueDraftData.draftSelections.slice(i, i + numTeams);
+      let temp = leagueDraftData.draftSelections.slice(i, i + numTeams);
+      if (round % 2 === 0) {
+        temp = temp.reverse();
+      }
       temp.unshift({ roundCard: `Round: ${round}` });
       fullDraftBoard.push(temp);
     }
@@ -210,6 +216,23 @@ app.get("/league/:leagueKey/big-board", (req, res) => {
   const playerData = getPlayerRankingsAndADP(th.orderBy, "asc");
   return res.render("bigBoard", { playerData, tableMetaData });
 });
+
+app.get(
+  "/league/:leagueKey/get-draft-updates",
+  asyncWrapper(async (req, res) => {
+    const { user } = req.session;
+
+    if (!user) {
+      res.redirect("/");
+    }
+
+    const { leagueKey } = req.params;
+    const { tokens } = user;
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+
+    res.json(await getDraftUpdates(leagueKey, client));
+  })
+);
 
 app.get("/get-table-body", (req, res) => {
   const { userId } = req.session;

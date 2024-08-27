@@ -40,6 +40,21 @@ export function hasLeagueData(leagueKey) {
   return present === 1;
 }
 
+const getPreviousDraftPickNumberStatement = dbPrepare(`
+  select
+    max(pick) as "previousPickNumber"
+  from draft_selection
+  where league_key=?
+`);
+
+export function getPreviousDraftPickNumber(leagueKey) {
+  const { previousPickNumber } = dbGet(
+    getPreviousDraftPickNumberStatement,
+    leagueKey
+  );
+  return previousPickNumber;
+}
+
 const getLeagueAccessTimesStatement = dbPrepare(`
   select
     league_key as "leagueKey",
@@ -84,6 +99,16 @@ function insertDraftSelection(selection, leagueKey) {
     updateAccessTime(s.leagueKey);
   });
   return transaction({ leagueKey, ...selection });
+}
+
+export function insertBulkDraftSelections(selections, leagueKey) {
+  const transaction = dbTransaction((s) => {
+    for (const selection of s) {
+      dbRun(insertDraftSelectionStatement, selection);
+    }
+    updateAccessTime(leagueKey);
+  });
+  return transaction(selections);
 }
 
 const deleteLeagueStatement = dbPrepare(`
@@ -160,4 +185,27 @@ export function getDraftData(leagueKey) {
   league.draftSelections = draftSelections;
 
   return league;
+}
+
+const getDraftSelectionsAfterPickStatement = dbPrepare(`
+  select
+    ds.team_key as "teamKey",
+    ds.pick,
+    ds.round,
+    p.first_name as "firstName",
+    p.last_name as "lastName",
+    p.image_url as "imageUrl",
+    pp.abbr as "position",
+    t.abbr as "teamAbbr",
+    t.name as "teamName"
+  from draft_selection as ds
+  join player as p on p.id=ds.player_id
+  join nfl_team as t on t.id=p.team_id
+  join player_position as pp on pp.id=p.position_id
+  where ds.league_key=@leagueKey and ds.pick > @pick
+  order by ds.pick
+`);
+
+export function getDraftSelectionsAfterPick(leagueKey, pick) {
+  return getDraftSelectionsAfterPickStatement.all({ leagueKey, pick });
 }

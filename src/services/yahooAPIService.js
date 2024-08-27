@@ -1,5 +1,10 @@
 import { importJWK, jwtVerify } from "jose";
 import oauth from "./oauth.js";
+import {
+  getDraftSelectionsAfterPick,
+  getPreviousDraftPickNumber,
+  insertBulkDraftSelections,
+} from "../repositories/draftRepo.js";
 
 //   # a = yahoo.get(
 //   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/players;start=0;count=100"
@@ -10,6 +15,8 @@ import oauth from "./oauth.js";
 //   # a = yahoo.get(
 //   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/draftresults"
 //   # )
+
+let index;
 
 export function getYahooOAuthConfig() {
   return {
@@ -28,7 +35,40 @@ export function requestYahooAccessToken(code) {
   return oauth.requestAccessToken({ code, ...config });
 }
 
+export async function getDraftUpdates(leagueKey, client) {
+  const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/draftresults?format=json_f`;
+
+  const response = await client.fetchJson(url);
+
+  const { league: l } = response.fantasy_content;
+
+  const previousPickNumber = getPreviousDraftPickNumber(leagueKey);
+  index = previousPickNumber + 1;
+
+  const newDraftSelections = l.draft_results
+    .slice(0, index) // delete this later
+    .slice(previousPickNumber)
+    .map((d) => {
+      const { pick, round, player_key, team_key } = d.draft_result;
+      const [gameId, l, leagueId] = team_key.split(".");
+      const playerId = player_key.split(".").at(-1);
+      return {
+        pick,
+        round,
+        leagueKey: [gameId, l, leagueId].join("."),
+        teamKey: team_key,
+        playerId,
+      };
+    });
+
+  insertBulkDraftSelections(newDraftSelections);
+  const retval = getDraftSelectionsAfterPick(leagueKey, previousPickNumber);
+  return retval;
+}
+
 export async function getLeagueDraftData(leagueKey, client) {
+  index = getPreviousDraftPickNumber(leagueKey) || 0; // delete this line
+
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=settings,draftresults,teams?format=json_f`;
 
   const response = await client.fetchJson(url);
@@ -58,7 +98,7 @@ export async function getLeagueDraftData(leagueKey, client) {
         teamLogo: team.team_logos[0].team_logo.url,
       };
     }),
-    draftSelections: l.draft_results.map((d) => {
+    draftSelections: l.draft_results.slice(0, index).map((d) => {
       const { pick, round, player_key, team_key } = d.draft_result;
       const [gameId, l, leagueId] = team_key.split(".");
       const playerId = player_key.split(".").at(-1);
