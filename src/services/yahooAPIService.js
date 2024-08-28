@@ -61,6 +61,16 @@ export async function getDraftUpdatesFromApi(leagueKey, client) {
   return retval;
 }
 
+function findTeamIndexFromPick(pick, numTeams) {
+  const round = Math.ceil(pick / numTeams);
+
+  if (round % 2 === 0) {
+    return numTeams - (pick % numTeams);
+  } else {
+    return (pick - 1) % numTeams;
+  }
+}
+
 export async function getLeagueDraftData(leagueKey, client) {
   let league;
 
@@ -72,8 +82,15 @@ export async function getLeagueDraftData(leagueKey, client) {
     league = getDraftData(leagueKey);
   }
 
+  const numTeams = league.teams.length;
+
   league.previousPickNum = league.draftSelections.length;
-  league.totalPicksInDraft = league.totalDraftRounds * league.teams.length;
+  league.currentPickNum = league.draftSelections.length + 1;
+  league.totalPicksInDraft = league.totalDraftRounds * numTeams;
+  league.currentTeamName =
+    league.teams[
+      findTeamIndexFromPick(league.currentPickNum, numTeams)
+    ].teamName;
 
   return league;
 }
