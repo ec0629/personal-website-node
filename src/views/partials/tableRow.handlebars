@@ -4,7 +4,7 @@
   <td class="{{etrRankClass}}">{{etrRank}} ({{etrRankVsPick}})</td>
   <td class="{{yahooRankClass}}">{{yahooRank}} ({{yahooRankVsPick}})</td>
   <td>{{rankDiff}}</td>
-  <td class="{{udAdpClass}}">{{udAdp}} ({{udAdpVsPick}})</td>
-  <td class="{{yahooAdpClass}}">{{yahooAdp}} ({{yahooAdpVsPick}})</td>
-  <td>{{adpDiff}}</td>
+  <td class="{{udAdpClass}}">{{#if udAdp}}{{udAdp}} ({{udAdpVsPick}}){{/if}}</td>
+  <td class="{{yahooAdpClass}}">{{#if yahooAdp}}{{yahooAdp}} ({{yahooAdpVsPick}}){{/if}}</td>
+  <td>{{#if udAdp}}{{adpDiff}}{{/if}}</td>
 </tr>

@@ -24,23 +24,30 @@ function extractPlayerData({ player }, idx) {
   const calculatedRank = idx + 1;
   const positionAbbr = player["primary_position"];
   const teamAbbr = player["editorial_team_abbr"];
+  const teamName = player["editorial_team_full_name"];
   const positionId = playerPositions.get(positionAbbr);
   const teamId = nflTeams.get(teamAbbr);
 
   const firstName = player["name"]["first"];
-  const lastName = player["name"]["last"];
+  let lastName = player["name"]["last"];
+
+  if (positionAbbr == "DEF" && lastName === null) {
+    lastName = teamName.replace(firstName, "").trim();
+  }
+
   const nameMatcher = createNameMatcher(firstName.concat(lastName));
 
   const rank = player["player_ranks"][0]["player_rank"]["rank_value"];
+  const adp = parseFloat(player["draft_analysis"]["average_pick"]) || null;
 
   const p = {
     playerId: player["player_id"],
     firstName,
     lastName,
     nameMatcher,
-    teamName: player["editorial_team_full_name"],
+    teamName,
     teamAbbr,
-    adp: player["draft_analysis"]["average_pick"],
+    adp,
     adpRound: player["draft_analysis"]["average_round"],
     positionAbbr,
     uniformNumber: player["uniform_number"] || null,
@@ -50,10 +57,6 @@ function extractPlayerData({ player }, idx) {
     positionId,
     teamId,
   };
-
-  if (p.positionAbbr == "DEF" && p.lastName === null) {
-    p.lastName = p.teamName.replace(p.firstName, "").trim();
-  }
 
   if (Math.abs(rank - calculatedRank) > 1) {
     console.warn(

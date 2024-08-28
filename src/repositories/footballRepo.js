@@ -81,10 +81,10 @@ export function getPlayerRankingsAndADP(orderBy, direction, leagueKey) {
       ds.pick as selected,
       ds_count.count as "currentPick"
     from etr_player_data as etr
-    join underdog_player_data as ud on etr.player_id=ud.player_id
     join yahoo_player_data as y on etr.player_id=y.player_id
     join player as p on etr.player_id=p.id
     join player_position as pos on p.position_id=pos.id
+    left join underdog_player_data as ud on etr.player_id=ud.player_id
     left join draft_selection as ds on ds.league_key=@leagueKey and ds.player_id=etr.player_id
     left join (
       select

@@ -44,7 +44,7 @@ CREATE TABLE player (
 CREATE TABLE yahoo_player_data (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id INTEGER NOT NULL,
-  adp REAL NOT NULL,
+  adp REAL,
   rank INTEGER NOT NULL,
   calculated_rank INTEGER NOT NULL,
   created_on TEXT NOT NULL,
