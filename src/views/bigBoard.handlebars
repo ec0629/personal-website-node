@@ -1,4 +1,4 @@
-{{> navBar}}
+{{> navBar league}}
 <div class="container">
   <div class="row">
     <div class="col">
@@ -7,28 +7,24 @@
           <tr>
             {{#each tableMetaData}}
 
-              <th
-                scope="col"
-                class="{{sortClass}}"
-                data-col-val="{{id}}"
-              >{{headerName}}
-                {{{sortAsc}}}{{{sortDesc}}}</th>
+            <th scope="col" class="{{sortClass}}" data-col-val="{{id}}">{{headerName}}
+              {{{sortAsc}}}{{{sortDesc}}}</th>
 
             {{/each}}
           </tr>
         </thead>
         <tbody>
           {{#each playerData}}
-            <tr class="{{positionClass}}">
-              <td>{{name}}</td>
-              <td>{{position}}</td>
-              <td>{{etrRank}}</td>
-              <td>{{yahooRank}}</td>
-              <td>{{rankDiff}}</td>
-              <td>{{udAdp}}</td>
-              <td>{{yahooAdp}}</td>
-              <td>{{adpDiff}}</td>
-            </tr>
+          <tr class="{{#if selected}}selected{{else}}{{positionClass}}{{/if}}">
+            <td>{{name}}</td>
+            <td>{{position}}</td>
+            <td class="{{etrRankClass}}">{{etrRank}} ({{etrRankVsPick}})</td>
+            <td class="{{yahooRankClass}}">{{yahooRank}} ({{yahooRankVsPick}})</td>
+            <td>{{rankDiff}}</td>
+            <td class="{{udAdpClass}}">{{udAdp}} ({{udAdpVsPick}})</td>
+            <td class="{{yahooAdpClass}}">{{yahooAdp}} ({{yahooAdpVsPick}})</td>
+            <td>{{adpDiff}}</td>
+          </tr>
           {{/each}}
         </tbody>
       </table>

@@ -204,18 +204,74 @@ app.get(
   })
 );
 
-app.get("/league/:leagueKey/big-board", (req, res) => {
-  const { user } = req.session;
+app.get(
+  "/league/:leagueKey/big-board",
+  asyncWrapper(async (req, res) => {
+    const { user } = req.session;
 
-  if (!user) {
-    return res.redirect("/");
+    if (!user) {
+      return res.redirect("/");
+    }
+
+    const { leagueKey } = req.params;
+
+    let leagueDraftData;
+    if (hasLeagueData(leagueKey)) {
+      leagueDraftData = getDraftData(leagueKey);
+    } else {
+      const { tokens } = user;
+      const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+      const apiData = await getLeagueDraftData(leagueKey, client);
+
+      if (["draft", "postdraft"].includes(apiData.draftStatus)) {
+        insertDraftData(apiData);
+        leagueDraftData = getDraftData(leagueKey);
+      } else {
+        leagueDraftData = apiData;
+      }
+    }
+
+    const currentDraftPick = leagueDraftData.draftSelections.length;
+
+    const th = tableMetaData.find((obj) => obj.id === "etr_rank");
+    th.sortClass = "sort-asc";
+    const playerData = getPlayerRankingsAndADP(
+      th.orderBy,
+      "asc",
+      leagueDraftData.leagueKey
+    );
+
+    const enhancedPlayerData = playerData.map((d) => {
+      const etrRankVsPick = Math.round(currentDraftPick - d.etrRank);
+      const yahooRankVsPick = Math.round(currentDraftPick - d.yahooRank);
+      const udAdpVsPick = Math.round(currentDraftPick - d.udAdp);
+      const yahooAdpVsPick = Math.round(currentDraftPick - d.etrRank);
+      return {
+        etrRankVsPick,
+        etrRankClass: setTableCellClass(etrRankVsPick),
+        yahooRankVsPick,
+        yahooRankClass: setTableCellClass(yahooRankVsPick),
+        udAdpVsPick,
+        udAdpClass: setTableCellClass(udAdpVsPick),
+        yahooAdpVsPick,
+        yahooAdpClass: setTableCellClass(yahooAdpVsPick),
+        ...d,
+      };
+    });
+    return res.render("bigBoard", {
+      league: leagueDraftData,
+      playerData: enhancedPlayerData,
+      tableMetaData,
+    });
+  })
+);
+
+function setTableCellClass(val) {
+  if (val > 6) {
+    return "green";
   }
-
-  const th = tableMetaData.find((obj) => obj.id === "etr_rank");
-  th.sortClass = "sort-asc";
-  const playerData = getPlayerRankingsAndADP(th.orderBy, "asc");
-  return res.render("bigBoard", { playerData, tableMetaData });
-});
+  return "red";
+}
 
 app.get(
   "/league/:leagueKey/get-draft-updates",
@@ -223,7 +279,7 @@ app.get(
     const { user } = req.session;
 
     if (!user) {
-      res.redirect("/");
+      throw new Error("Authentication required.");
     }
 
     const { leagueKey } = req.params;
@@ -238,7 +294,7 @@ app.get("/get-table-body", (req, res) => {
   const { userId } = req.session;
 
   if (!userId) {
-    res.redirect("/");
+    throw new Error("Authentication required.");
   }
 
   const { direction, colVal } = req.query;

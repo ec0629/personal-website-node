@@ -27,6 +27,12 @@
     background-color: aquamarine;
 }
 
+ .selected {
+    background-color: black;
+    color: white;
+    display: hidden;
+}
+
 table .sort-asc .fa-chevron-down {
     visibility: visible;
 }
@@ -65,4 +71,18 @@ table .def td {
 
 table .k td {
     background-color: rgba(255, 0, 251, 0.44);
+}
+
+table td.red {
+    background-color: red;
+}
+
+table td.green {
+    background-color: green;
+}
+
+table .selected td {
+    background-color: black;
+    color: white;
+    /* display: hidden; */
 }
