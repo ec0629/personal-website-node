@@ -1,4 +1,5 @@
 {{> navBar league}}
+<div id="leagueKey" data-value="{{league.leagueKey}}"></div>
 <div class="container">
   <div class="row">
     <div class="col">
@@ -15,16 +16,7 @@
         </thead>
         <tbody>
           {{#each playerData}}
-          <tr class="{{#if selected}}selected{{else}}{{positionClass}}{{/if}}">
-            <td>{{name}}</td>
-            <td>{{position}}</td>
-            <td class="{{etrRankClass}}">{{etrRank}} ({{etrRankVsPick}})</td>
-            <td class="{{yahooRankClass}}">{{yahooRank}} ({{yahooRankVsPick}})</td>
-            <td>{{rankDiff}}</td>
-            <td class="{{udAdpClass}}">{{udAdp}} ({{udAdpVsPick}})</td>
-            <td class="{{yahooAdpClass}}">{{yahooAdp}} ({{yahooAdpVsPick}})</td>
-            <td>{{adpDiff}}</td>
-          </tr>
+          {{> tableRow}}
           {{/each}}
         </tbody>
       </table>

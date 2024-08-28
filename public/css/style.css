@@ -86,3 +86,7 @@ table .selected td {
     color: white;
     /* display: hidden; */
 }
+
+table td, table th {
+    text-align: center;
+}

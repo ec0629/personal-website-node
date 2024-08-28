@@ -1,3 +1,7 @@
+const leagueKey = document
+  .getElementById("leagueKey")
+  .getAttribute("data-value");
+
 const headers = document.querySelectorAll("th");
 
 const SORT_ASC = "sort-asc";
@@ -33,7 +37,9 @@ headers.forEach((el) => {
     });
 
     try {
-      const response = await fetch(`/get-table-body?${query}`);
+      const response = await fetch(
+        `/league/${leagueKey}/get-table-body?${query}`
+      );
 
       if (!response.ok) {
         throw new Error(

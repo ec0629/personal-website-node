@@ -20,11 +20,6 @@ import {
   requestYahooAccessToken,
   verifyYahooJwtAndDecode,
 } from "./services/yahooAPIService.js";
-import {
-  getDraftData,
-  hasLeagueData,
-  insertDraftData,
-} from "./repositories/draftRepo.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
@@ -205,54 +200,29 @@ app.get(
       return res.redirect("/");
     }
 
+    const { tokens } = user;
     const { leagueKey } = req.params;
 
-    let leagueDraftData;
-    if (hasLeagueData(leagueKey)) {
-      leagueDraftData = getDraftData(leagueKey);
-    } else {
-      const { tokens } = user;
-      const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
-      const apiData = await getLeagueDraftData(leagueKey, client);
-
-      if (["draft", "postdraft"].includes(apiData.draftStatus)) {
-        insertDraftData(apiData);
-        leagueDraftData = getDraftData(leagueKey);
-      } else {
-        leagueDraftData = apiData;
-      }
-    }
-
-    const currentDraftPick = leagueDraftData.draftSelections.length;
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const league = await getLeagueDraftData(leagueKey, client);
 
     const th = tableMetaData.find((obj) => obj.id === "etr_rank");
     th.sortClass = "sort-asc";
     const playerData = getPlayerRankingsAndADP(
       th.orderBy,
       "asc",
-      leagueDraftData.leagueKey
+      league.leagueKey
     );
 
-    const enhancedPlayerData = playerData.map((d) => {
-      const etrRankVsPick = Math.round(currentDraftPick - d.etrRank);
-      const yahooRankVsPick = Math.round(currentDraftPick - d.yahooRank);
-      const udAdpVsPick = Math.round(currentDraftPick - d.udAdp);
-      const yahooAdpVsPick = Math.round(currentDraftPick - d.etrRank);
-      return {
-        etrRankVsPick,
-        etrRankClass: setTableCellClass(etrRankVsPick),
-        yahooRankVsPick,
-        yahooRankClass: setTableCellClass(yahooRankVsPick),
-        udAdpVsPick,
-        udAdpClass: setTableCellClass(udAdpVsPick),
-        yahooAdpVsPick,
-        yahooAdpClass: setTableCellClass(yahooAdpVsPick),
-        ...d,
-      };
+    playerData.forEach((d) => {
+      d.etrRankClass = setTableCellClass(d.etrRankVsPick);
+      d.yahooRankClass = setTableCellClass(d.yahooRankVsPick);
+      d.udAdpClass = setTableCellClass(d.udAdpVsPick);
+      d.yahooAdpClass = setTableCellClass(d.yahooAdpVsPick);
     });
     return res.render("bigBoard", {
-      league: leagueDraftData,
-      playerData: enhancedPlayerData,
+      league,
+      playerData,
       tableMetaData,
     });
   })
@@ -261,8 +231,9 @@ app.get(
 function setTableCellClass(val) {
   if (val > 6) {
     return "green";
+  } else if (val < -6) {
+    return "red";
   }
-  return "red";
 }
 
 app.get(
@@ -282,18 +253,28 @@ app.get(
   })
 );
 
-app.get("/get-table-body", (req, res) => {
-  const { userId } = req.session;
+app.get("/league/:leagueKey/get-table-body", (req, res) => {
+  const { user } = req.session;
 
-  if (!userId) {
+  if (!user) {
     throw new Error("Authentication required.");
   }
 
   const { direction, colVal } = req.query;
   const th = tableMetaData.find((obj) => obj.id === colVal);
-  th.sortClass = "sort-asc";
-  const data = getPlayerRankingsAndADP(th.orderBy, direction);
-  return res.render("table", { data });
+
+  const { leagueKey } = req.params;
+
+  const playerData = getPlayerRankingsAndADP(th.orderBy, direction, leagueKey);
+
+  playerData.forEach((d) => {
+    d.etrRankClass = setTableCellClass(d.etrRankVsPick);
+    d.yahooRankClass = setTableCellClass(d.yahooRankVsPick);
+    d.udAdpClass = setTableCellClass(d.udAdpVsPick);
+    d.yahooAdpClass = setTableCellClass(d.yahooAdpVsPick);
+  });
+
+  return res.render("bigBoardUpdate", { playerData });
 });
 
 app.use((req, res, next) => {

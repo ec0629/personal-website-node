@@ -156,6 +156,7 @@ const getDraftTeamsStatement = dbPrepare(`
     draft_position as "draftPosition"
   from draft_team
   where league_key=?
+  order by draft_position
 `);
 
 const getDraftSelectionsStatement = dbPrepare(`

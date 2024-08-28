@@ -66,26 +66,34 @@ export function getPlayerRankingsAndADP(orderBy, direction, leagueKey) {
     select
       etr.player_id as "playerId",
       etr.rank as "etrRank",
+      round(ds_count.count - etr.rank) as "etrRankVsPick",
       ud.adp as "udAdp",
+      round(ds_count.count - ud.adp) as "udAdpVsPick",
       y.adp as "yahooAdp",
+      round(ds_count.count - y.adp) as "yahooAdpVsPick",
       y.calculated_rank as "yahooRank",
+      round(ds_count.count - y.calculated_rank) as "yahooRankVsPick",
       concat_ws(' ', p.first_name, p.last_name) as "name",
       pos.abbr as "position",
       lower(pos.abbr) as "positionClass",
       y.calculated_rank - etr.rank as "rankDiff",
       round(y.adp - ud.adp, 1) as "adpDiff",
-      exists(
-        select 1 
-        from draft_selection as ds
-        where league_key=? and ds.player_id=etr.player_id
-      ) as selected
+      ds.pick as selected,
+      ds_count.count as "currentPick"
     from etr_player_data as etr
     join underdog_player_data as ud on etr.player_id=ud.player_id
     join yahoo_player_data as y on etr.player_id=y.player_id
     join player as p on etr.player_id=p.id
     join player_position as pos on p.position_id=pos.id
+    left join draft_selection as ds on ds.league_key=@leagueKey and ds.player_id=etr.player_id
+    left join (
+      select
+        count(*) + 1 as count
+      from draft_selection
+      where league_key=@leagueKey
+    ) as ds_count
     order by ${orderBy} ${direction}
-    `).all(leagueKey);
+    `).all({ leagueKey });
 }
 
 // export function getPlayerRankingsAndADP(orderBy, direction) {
