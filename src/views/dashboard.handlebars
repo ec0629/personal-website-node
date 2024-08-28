@@ -1,17 +1,5 @@
 {{> navBar}}
 
-{{#if countdownString}}
-<div class="container">
-  <div class="row vh-100 align-items-center">
-    <div class="col text-center">
-      <h1>Your draft will begin in:</h1>
-      <div id="draftTime" data-value="{{draftTime}}"></div>
-      <h2 id="countdown">{{countdownString}}</h2>
-    </div>
-  </div>
-</div>
-<script src="/js/countdown.js"></script>
-{{else}}
 <div id="leagueKey" data-value="{{leagueKey}}"></div>
 <div class="container-fluid draft-summary">
   <div class="row justify-content-center">
@@ -29,7 +17,7 @@
     </div>
     {{/each}}
   </div>
-  {{#each draftSelections}}
+  {{#each fullDraftBoard}}
   <div class="row justify-content-center">
     {{#each this}}
     {{#if roundCard}}
@@ -57,4 +45,3 @@
   {{/each}}
 </div>
 <script src="/js/dashboard.js"></script>
-{{/if}}

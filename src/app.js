@@ -5,14 +5,15 @@ import session from "express-session";
 import sqlite3Session from "better-sqlite3-session-store";
 import { engine } from "express-handlebars";
 import { notFound } from "@hapi/boom";
-import { asyncWrapper, getDirName } from "./utils.js";
+import { asyncWrapper, getDirName, setTimeRemaining } from "./utils.js";
 import oauth from "./services/oauth.js";
 import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
-  getDraftUpdates,
+  getDraftUpdatesFromApi,
   getLeagueDraftData,
+  getLeagueDraftDataFromApi,
   getUsersLeaguesAndTeams,
   getYahooAuthorizationUrl,
   getYahooOAuthConfig,
@@ -120,7 +121,34 @@ app.get(
     const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
     const leagues = await getUsersLeaguesAndTeams(client);
 
+    leagues.forEach((l) => {
+      l.buttonLink = l.team.draftPosition
+        ? `/league/${l.leagueKey}/dashboard`
+        : `/league/${l.leagueKey}/countdown`;
+    });
+
     return res.render("leagues", { leagues });
+  })
+);
+
+app.get(
+  "/league/:leagueKey/countdown",
+  asyncWrapper(async (req, res) => {
+    const { user } = req.session;
+
+    if (!user) {
+      return res.redirect("/");
+    }
+
+    const { tokens } = user;
+    const { leagueKey } = req.params;
+
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const league = await getLeagueDraftDataFromApi(leagueKey, client);
+
+    league.countdownString = setTimeRemaining(league.draftTime);
+
+    return res.render("countdown", league);
   })
 );
 
@@ -133,74 +161,38 @@ app.get(
       return res.redirect("/");
     }
 
+    const { tokens } = user;
     const { leagueKey } = req.params;
 
-    let leagueDraftData;
-    if (hasLeagueData(leagueKey)) {
-      leagueDraftData = getDraftData(leagueKey);
-    } else {
-      const { tokens } = user;
-      const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
-      const apiData = await getLeagueDraftData(leagueKey, client);
+    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const league = await getLeagueDraftData(leagueKey, client);
 
-      if (["draft", "postdraft"].includes(apiData.draftStatus)) {
-        insertDraftData(apiData);
-        leagueDraftData = getDraftData(leagueKey);
-      } else {
-        leagueDraftData = apiData;
-      }
-    }
+    const { previousPickNum, totalPicksInDraft } = league;
 
-    leagueDraftData.draftPositionSet = Boolean(
-      leagueDraftData.teams[0]?.draftPosition
-    );
-
-    leagueDraftData.draftLive = leagueDraftData.draftStatus === "draft";
-    leagueDraftData.draftComplete = leagueDraftData.draftStatus === "postdraft";
-
-    if (!leagueDraftData.draftPositionSet) {
-      const countDownDate = new Date(leagueDraftData.draftTime).getTime();
-      const now = new Date().getTime();
-      const distance = countDownDate - now;
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      leagueDraftData.countdownString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }
-
-    const start = leagueDraftData.draftSelections.length;
-    const stop =
-      leagueDraftData.totalDraftRounds * leagueDraftData.teams.length;
-
-    for (let i = start; i < stop; i += 1) {
-      leagueDraftData.draftSelections.push({
+    for (let i = previousPickNum; i < totalPicksInDraft; i += 1) {
+      league.draftSelections.push({
         pick: i + 1,
         player: null,
       });
     }
 
-    const numTeams = leagueDraftData.teams.length;
+    const numTeams = league.teams.length;
 
     const fullDraftBoard = [];
 
-    for (let i = 0; i < stop; i += numTeams) {
+    for (let i = 0; i < totalPicksInDraft; i += numTeams) {
       const round = i / numTeams + 1;
-      let temp = leagueDraftData.draftSelections.slice(i, i + numTeams);
+      let roundChunk = league.draftSelections.slice(i, i + numTeams);
       if (round % 2 === 0) {
-        temp = temp.reverse();
+        roundChunk = roundChunk.reverse();
       }
-      temp.unshift({ roundCard: `Round: ${round}` });
-      fullDraftBoard.push(temp);
+      roundChunk.unshift({ roundCard: `Round: ${round}` });
+      fullDraftBoard.push(roundChunk);
     }
 
-    leagueDraftData.draftSelections = fullDraftBoard;
+    league.fullDraftBoard = fullDraftBoard;
 
-    return res.render("dashboard", leagueDraftData);
+    return res.render("dashboard", league);
   })
 );
 
@@ -286,7 +278,7 @@ app.get(
     const { tokens } = user;
     const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
 
-    res.json(await getDraftUpdates(leagueKey, client));
+    res.json(await getDraftUpdatesFromApi(leagueKey, client));
   })
 );
 

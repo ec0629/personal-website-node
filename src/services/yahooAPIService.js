@@ -1,22 +1,15 @@
 import { importJWK, jwtVerify } from "jose";
 import oauth from "./oauth.js";
 import {
+  getDraftData,
   getDraftSelectionsAfterPick,
   getPreviousDraftPickNumber,
+  hasLeagueData,
   insertBulkDraftSelections,
+  insertDraftData,
 } from "../repositories/draftRepo.js";
 
-//   # a = yahoo.get(
-//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/players;start=0;count=100"
-//   # )
-//   # a = yahoo.get(
-//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/teams;out=roster"
-//   # )
-//   # a = yahoo.get(
-//   #     f"https://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/draftresults"
-//   # )
-
-let index;
+let index; // delete this line later
 
 export function getYahooOAuthConfig() {
   return {
@@ -35,15 +28,17 @@ export function requestYahooAccessToken(code) {
   return oauth.requestAccessToken({ code, ...config });
 }
 
-export async function getDraftUpdates(leagueKey, client) {
+export async function getDraftUpdatesFromApi(leagueKey, client) {
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/draftresults?format=json_f`;
 
   const response = await client.fetchJson(url);
 
   const { league: l } = response.fantasy_content;
 
-  const previousPickNumber = getPreviousDraftPickNumber(leagueKey);
-  index = previousPickNumber + 1;
+  const previousPickNumber = getPreviousDraftPickNumber(leagueKey) ?? 0;
+
+  const randomNumber = Math.floor(Math.random() * 3) + 1; // delete this line later
+  index = previousPickNumber + randomNumber; // delete this line later
 
   const newDraftSelections = l.draft_results
     .slice(0, index) // delete this later
@@ -67,7 +62,24 @@ export async function getDraftUpdates(leagueKey, client) {
 }
 
 export async function getLeagueDraftData(leagueKey, client) {
-  index = getPreviousDraftPickNumber(leagueKey) || 0; // delete this line
+  let league;
+
+  if (hasLeagueData(leagueKey)) {
+    league = getDraftData(leagueKey);
+  } else {
+    const response = await getLeagueDraftDataFromApi(leagueKey, client);
+    insertDraftData(response);
+    league = getDraftData(leagueKey);
+  }
+
+  league.previousPickNum = league.draftSelections.length;
+  league.totalPicksInDraft = league.totalDraftRounds * league.teams.length;
+
+  return league;
+}
+
+export async function getLeagueDraftDataFromApi(leagueKey, client) {
+  index = getPreviousDraftPickNumber(leagueKey) ?? 0; // delete this line
 
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=settings,draftresults,teams?format=json_f`;
 
@@ -99,6 +111,7 @@ export async function getLeagueDraftData(leagueKey, client) {
       };
     }),
     draftSelections: l.draft_results.slice(0, index).map((d) => {
+      // delete the slice here later
       const { pick, round, player_key, team_key } = d.draft_result;
       const [gameId, l, leagueId] = team_key.split(".");
       const playerId = player_key.split(".").at(-1);
@@ -140,6 +153,7 @@ export async function getUsersLeaguesAndTeams(client) {
         name: team.name,
         teamId: team.team_id,
         logoUrl: team.team_logos[0]?.team_logo?.url,
+        draftPosition: team.draft_position,
       },
     };
   });

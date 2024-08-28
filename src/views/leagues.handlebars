@@ -1,23 +1,19 @@
 <div class="container">
   <div class="row vh-100 align-items-center">
     {{#each leagues}}
-      <div class="col d-flex justify-content-center">
-        <div class="card" style="width: 18rem;">
-          <img
-            src="{{{team.logoUrl}}}"
-            class="card-img-top"
-            alt="{{team.name}} logo"
-          />
-          <div class="card-body">
-            <h5 class="card-title">{{team.name}}</h5>
-            <p class="card-text">League: {{name}}</p>
-            <p class="card-text">Draft Status: {{draftStatus}}</p>
-            <a href="/league/{{leagueKey}}/dashboard" class="btn btn-primary">
-              Go to dashboard
-            </a>
-          </div>
+    <div class="col d-flex justify-content-center">
+      <div class="card" style="width: 18rem;">
+        <img src="{{{team.logoUrl}}}" class="card-img-top" alt="{{team.name}} logo" />
+        <div class="card-body">
+          <h5 class="card-title">{{team.name}}</h5>
+          <p class="card-text">League: {{name}}</p>
+          <p class="card-text">Draft Status: {{draftStatus}}</p>
+          <a href="{{buttonLink}}" class="btn btn-primary">
+            Go to dashboard
+          </a>
         </div>
       </div>
+    </div>
     {{/each}}
   </div>
 </div>
