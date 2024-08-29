@@ -92,28 +92,7 @@ export function getPlayerRankingsAndADP(orderBy, direction, leagueKey) {
       from draft_selection
       where league_key=@leagueKey
     ) as ds_count
+    where ds.pick is null
     order by ${orderBy} ${direction}
     `).all({ leagueKey });
 }
-
-// export function getPlayerRankingsAndADP(orderBy, direction) {
-//   return dbPrepare(`
-//     select
-//       etr.player_id as "playerId",
-//       etr.rank as "etrRank",
-//       ud.adp as "udAdp",
-//       y.adp as "yahooAdp",
-//       y.calculated_rank as "yahooRank",
-//       concat_ws(' ', p.first_name, p.last_name) as "name",
-//       pos.abbr as "position",
-//       lower(pos.abbr) as "positionClass",
-//       y.calculated_rank - etr.rank as "rankDiff",
-//       round(y.adp - ud.adp, 1) as "adpDiff"
-//     from etr_player_data as etr
-//     join underdog_player_data as ud on etr.player_id=ud.player_id
-//     join yahoo_player_data as y on etr.player_id=y.player_id
-//     join player as p on etr.player_id=p.id
-//     join player_position as pos on p.position_id=pos.id
-//     order by ${orderBy} ${direction}
-//     `).all();
-// }

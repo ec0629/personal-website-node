@@ -6,12 +6,6 @@ const leagueKey = document
 
 const toastContainer = document.querySelector(".toast-container");
 
-const toastElList = document.querySelectorAll(".toast");
-const toastList = [...toastElList].map(
-  (toastEl) => new bootstrap.Toast(toastEl)
-);
-toastList.forEach((t) => t.show());
-
 async function getDraftUpdates() {
   try {
     const response = await fetch(`/league/${leagueKey}/get-draft-updates`);
@@ -49,7 +43,6 @@ async function getDraftUpdates() {
     const toastList = [...toastElList].map((toastEl) => {
       toastEl.addEventListener("hidden.bs.toast", () => {
         toastEl.remove();
-        // console.log(toastEl);
       });
       return new bootstrap.Toast(toastEl, { autohide: false });
     });

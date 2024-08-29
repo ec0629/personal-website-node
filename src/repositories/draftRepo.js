@@ -37,6 +37,7 @@ const hasLeagueDataStatement = dbPrepare(`
 
 export function hasLeagueData(leagueKey) {
   const { present } = dbGet(hasLeagueDataStatement, leagueKey);
+  updateAccessTime(leagueKey);
   return present === 1;
 }
 
@@ -52,6 +53,7 @@ export function getPreviousDraftPickNumber(leagueKey) {
     getPreviousDraftPickNumberStatement,
     leagueKey
   );
+  updateAccessTime(leagueKey);
   return previousPickNumber;
 }
 
@@ -184,7 +186,7 @@ export function getDraftData(leagueKey) {
   const draftSelections = getDraftSelectionsStatement.all(leagueKey);
   league.teams = teams;
   league.draftSelections = draftSelections;
-
+  updateAccessTime(leagueKey);
   return league;
 }
 
@@ -210,5 +212,6 @@ const getDraftSelectionsAfterPickStatement = dbPrepare(`
 `);
 
 export function getDraftSelectionsAfterPick(leagueKey, pick) {
+  updateAccessTime(leagueKey);
   return getDraftSelectionsAfterPickStatement.all({ leagueKey, pick });
 }

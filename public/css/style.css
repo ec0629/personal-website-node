@@ -11,19 +11,19 @@
     width: 7rem;
 }
 
-.draft-summary .wr {
+.draft-summary-body .WR {
     background-color: orange;
 }
 
-.draft-summary .qb {
+.draft-summary-body .QB {
     background-color: lightcoral;
 }
 
-.draft-summary .te {
+.draft-summary-body .TE {
     background-color: dodgerblue;
 }
 
-.draft-summary .rb {
+.draft-summary-body .RB {
     background-color: aquamarine;
 }
 
@@ -90,3 +90,15 @@ table .selected td {
 table td, table th {
     text-align: center;
 }
+
+tbody {
+    display: block;
+    height: 600px; /* Set your desired height */
+    overflow-y: auto;/* or auto if horizontal scrolling is needed */
+  }
+  
+  thead, tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
