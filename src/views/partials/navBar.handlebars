@@ -11,14 +11,15 @@
           <a class="nav-link" href="/leagues">Leagues</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/league/{{leagueKey}}/dashboar">Dashboard</a>
+          <a class="nav-link" aria-current="page" href="/league/{{leagueKey}}/dashboard">Dashboard</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" aria-current="page" href="/league/{{leagueKey}}/big-board">The Big Board</a>
         </li>
       </ul>
-      <span class="navbar-brand mb-0 h1 ms-auto">Current Pick: {{currentPickNum}}</span>
-      <span class="navbar-brand mb-0 h1">{{currentTeamName}}</span>
+      <span class="navbar-brand mb-0 h1 ms-auto">Current Pick: <span
+          id="currentPickNum">{{currentPickNum}}</span></span>
+      <span id="currentTeamName" class="navbar-brand mb-0 h1">{{currentTeamName}}</span>
     </div>
   </div>
 </nav>

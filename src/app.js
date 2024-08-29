@@ -162,9 +162,9 @@ app.get(
     const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
     const league = await getLeagueDraftData(leagueKey, client);
 
-    const { previousPickNum, totalPicksInDraft } = league;
+    const { totalPreviousPicks, totalPicksInDraft } = league;
 
-    for (let i = previousPickNum; i < totalPicksInDraft; i += 1) {
+    for (let i = totalPreviousPicks; i < totalPicksInDraft; i += 1) {
       league.draftSelections.push({
         pick: i + 1,
         player: null,

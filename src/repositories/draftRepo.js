@@ -198,11 +198,13 @@ const getDraftSelectionsAfterPickStatement = dbPrepare(`
     p.image_url as "imageUrl",
     pp.abbr as "position",
     t.abbr as "teamAbbr",
-    t.name as "teamName"
+    t.name as "teamName",
+    dt.team_name as "selectedBy"
   from draft_selection as ds
   join player as p on p.id=ds.player_id
   join nfl_team as t on t.id=p.team_id
   join player_position as pp on pp.id=p.position_id
+  join draft_team as dt on dt.team_key=ds.team_key
   where ds.league_key=@leagueKey and ds.pick > @pick
   order by ds.pick
 `);

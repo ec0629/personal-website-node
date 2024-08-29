@@ -29,7 +29,7 @@ export function requestYahooAccessToken(code) {
 }
 
 export async function getDraftUpdatesFromApi(leagueKey, client) {
-  const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/draftresults?format=json_f`;
+  const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=draftresults,teams?format=json_f`;
 
   const response = await client.fetchJson(url);
 
@@ -37,37 +37,48 @@ export async function getDraftUpdatesFromApi(leagueKey, client) {
 
   const previousPickNumber = getPreviousDraftPickNumber(leagueKey) ?? 0;
 
-  const randomNumber = Math.floor(Math.random() * 3) + 1; // delete this line later
+  const randomNumber = 1; // Math.floor(Math.random() * 3) + 1; // delete this line later
   index = previousPickNumber + randomNumber; // delete this line later
 
-  const newDraftSelections = l.draft_results
-    .slice(0, index) // delete this later
-    .slice(previousPickNumber)
-    .map((d) => {
-      const { pick, round, player_key, team_key } = d.draft_result;
-      const [gameId, l, leagueId] = team_key.split(".");
-      const playerId = player_key.split(".").at(-1);
-      return {
-        pick,
-        round,
-        leagueKey: [gameId, l, leagueId].join("."),
-        teamKey: team_key,
-        playerId,
-      };
-    });
+  const draftResults = l.draft_results.slice(0, index); // delete this slice call later
+
+  const newDraftSelections = draftResults.slice(previousPickNumber).map((d) => {
+    const { pick, round, player_key, team_key } = d.draft_result;
+    const [gameId, l, leagueId] = team_key.split(".");
+    const playerId = player_key.split(".").at(-1);
+    return {
+      pick,
+      round,
+      leagueKey: [gameId, l, leagueId].join("."),
+      teamKey: team_key,
+      playerId,
+    };
+  });
+
+  const teamsOrderedByDraftPosition = l.teams
+    .map((t) => t.team)
+    .sort((a, b) => a.draft_position - b.draft_position);
 
   insertBulkDraftSelections(newDraftSelections);
-  const retval = getDraftSelectionsAfterPick(leagueKey, previousPickNumber);
-  return retval;
+  const selections = getDraftSelectionsAfterPick(leagueKey, previousPickNumber);
+  const totalPreviousPicks = draftResults.length;
+  const currentPickNum = totalPreviousPicks + 1;
+  const teamIndex = findTeamIndexFromPick(totalPreviousPicks, l.teams.length);
+  const currentTeam = teamsOrderedByDraftPosition[teamIndex];
+  const currentTeamName = currentTeam.name;
+  return { selections, currentPickNum, currentTeamName };
 }
 
-function findTeamIndexFromPick(pick, numTeams) {
-  const round = Math.ceil(pick / numTeams);
+function findTeamIndexFromPick(totalPreviousPicks, numTeams) {
+  const round = Math.ceil((totalPreviousPicks + 1) / numTeams);
+
+  const index = totalPreviousPicks % numTeams;
+  const upperBound = numTeams - 1;
 
   if (round % 2 === 0) {
-    return numTeams - (pick % numTeams);
+    return upperBound - index;
   } else {
-    return (pick - 1) % numTeams;
+    return index;
   }
 }
 
@@ -84,13 +95,14 @@ export async function getLeagueDraftData(leagueKey, client) {
 
   const numTeams = league.teams.length;
 
-  league.previousPickNum = league.draftSelections.length;
+  league.totalPreviousPicks = league.draftSelections.length;
   league.currentPickNum = league.draftSelections.length + 1;
   league.totalPicksInDraft = league.totalDraftRounds * numTeams;
-  league.currentTeamName =
-    league.teams[
-      findTeamIndexFromPick(league.currentPickNum, numTeams)
-    ].teamName;
+  const teamIndexVal = findTeamIndexFromPick(
+    league.totalPreviousPicks,
+    numTeams
+  );
+  league.currentTeamName = league.teams[teamIndexVal].teamName;
 
   return league;
 }
