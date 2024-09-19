@@ -20,9 +20,10 @@ export default (data) => {
         const playerIds = getPlayerIdFromNameMatcher(nameMatcher);
 
         if (playerIds.length === 0 && adp < 216) {
-          throw new Error(
-            `No player id matches were found for: ${name},  adp: ${adp}.`
+          console.log(
+            `No player id matches were found for: ${name},  rank: ${adp}.`
           );
+          continue;
         }
 
         if (playerIds.length > 1) {

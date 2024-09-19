@@ -9,8 +9,6 @@ import {
   insertDraftData,
 } from "../repositories/draftRepo.js";
 
-let index; // delete this line later
-
 export function getYahooOAuthConfig() {
   return {
     clientId: process.env.YAHOO_CLIENT_ID_OIDC,
@@ -35,15 +33,24 @@ export async function getDraftUpdatesFromApi(leagueKey, client) {
 
   const { league: l } = response.fantasy_content;
 
+  // if (!response.ok) {
+  //   const message = await response.text();
+  //   console.log(message);
+  // }
+
   const previousPickNumber = getPreviousDraftPickNumber(leagueKey) ?? 0;
 
-  const randomNumber = 1; // Math.floor(Math.random() * 3) + 1; // delete this line later
-  index = previousPickNumber + randomNumber; // delete this line later
-
-  const draftResults = l.draft_results.slice(0, index); // delete this slice call later
+  const draftResults = l.draft_results.filter((ds) => {
+    console.log(ds);
+    if (ds.draft_result.player_key) {
+      return true;
+    }
+    return false;
+  });
 
   const newDraftSelections = draftResults.slice(previousPickNumber).map((d) => {
     const { pick, round, player_key, team_key } = d.draft_result;
+
     const [gameId, l, leagueId] = team_key.split(".");
     const playerId = player_key.split(".").at(-1);
     return {
@@ -108,14 +115,19 @@ export async function getLeagueDraftData(leagueKey, client) {
 }
 
 export async function getLeagueDraftDataFromApi(leagueKey, client) {
-  index = getPreviousDraftPickNumber(leagueKey) ?? 0; // delete this line
-
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=settings,draftresults,teams?format=json_f`;
 
   const response = await client.fetchJson(url);
 
   const { league: l } = response.fantasy_content;
-  const { settings } = response.fantasy_content.league;
+  const { settings, draft_results } = response.fantasy_content.league;
+  const draftResults = draft_results.filter((ds) => {
+    console.log(ds);
+    if (ds.draft_result.player_key) {
+      return true;
+    }
+    return false;
+  });
 
   return {
     leagueName: l.name,
@@ -139,19 +151,20 @@ export async function getLeagueDraftDataFromApi(leagueKey, client) {
         teamLogo: team.team_logos[0].team_logo.url,
       };
     }),
-    draftSelections: l.draft_results.slice(0, index).map((d) => {
-      // delete the slice here later
-      const { pick, round, player_key, team_key } = d.draft_result;
-      const [gameId, l, leagueId] = team_key.split(".");
-      const playerId = player_key.split(".").at(-1);
-      return {
-        pick,
-        round,
-        leagueKey: [gameId, l, leagueId].join("."),
-        teamKey: team_key,
-        playerId,
-      };
-    }),
+    draftSelections: draftResults
+      .filter((ds) => ds.player_key)
+      .map((d) => {
+        const { pick, round, player_key, team_key } = d.draft_result;
+        const [gameId, l, leagueId] = team_key.split(".");
+        const playerId = player_key.split(".").at(-1);
+        return {
+          pick,
+          round,
+          leagueKey: [gameId, l, leagueId].join("."),
+          teamKey: team_key,
+          playerId,
+        };
+      }),
   };
 }
 

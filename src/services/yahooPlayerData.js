@@ -7,13 +7,14 @@ import {
 import { createNameMatcher } from "../utils.js";
 
 const yahooUrl =
-  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=1100;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
+  "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/league/449.l.public/players;position=ALL;start=0;count=750;sort=rank_season;out=ranks;ranks=season/draft_analysis?format=json_f";
 
 async function getYahooPlayerData() {
   let response = await fetch(yahooUrl);
 
   if (!response.ok) {
-    throw new Error("Yahoo request error.");
+    const message = await response.text();
+    throw new Error(`Yahoo player api error: ${message}`);
   }
 
   response = await response.json();
