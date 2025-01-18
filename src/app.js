@@ -6,20 +6,22 @@ import sqlite3Session from "better-sqlite3-session-store";
 import { engine } from "express-handlebars";
 import { notFound } from "@hapi/boom";
 import { asyncWrapper, getDirName, setTimeRemaining } from "./utils.js";
-import oauth from "./services/oauth.js";
+import {
+  requestYahooAccessToken,
+  getYahooOAuthClient,
+  getYahooAuthorizationUrl,
+} from "./services/oauth.js";
 import { getDbObject } from "./db.js";
 import { getPlayerRankingsAndADP } from "./repositories/footballRepo.js";
 import { tableMetaData } from "./dbMaps.js";
 import {
+  findTeamIndexFromPick,
   getDraftUpdatesFromApi,
   getLeagueDraftData,
   getLeagueDraftDataFromApi,
   getUsersLeaguesAndTeams,
-  getYahooAuthorizationUrl,
-  getYahooOAuthConfig,
-  requestYahooAccessToken,
-  verifyYahooJwtAndDecode,
 } from "./services/yahooAPIService.js";
+import { getTeamsInLeague } from "./repositories/draftRepo.js";
 
 const __dirname = getDirName(import.meta.url);
 dotenv.config(path.join(__dirname, "..", ".env"));
@@ -82,10 +84,8 @@ app.get(
 
     const { code } = req.query;
 
-    const { access_token, refresh_token, expires_at, id_token } =
+    const { access_token, refresh_token, expires_at, jwt } =
       await requestYahooAccessToken(code);
-
-    const jwt = await verifyYahooJwtAndDecode(id_token);
 
     req.session.user = {
       givenName: jwt.given_name,
@@ -113,7 +113,7 @@ app.get(
     }
 
     const { tokens } = user;
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const client = getYahooOAuthClient(tokens);
     const leagues = await getUsersLeaguesAndTeams(client);
 
     leagues.forEach((l) => {
@@ -138,7 +138,7 @@ app.get(
     const { tokens } = user;
     const { leagueKey } = req.params;
 
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const client = getYahooOAuthClient(tokens);
     const league = await getLeagueDraftDataFromApi(leagueKey, client);
 
     league.countdownString = setTimeRemaining(league.draftTime);
@@ -159,7 +159,7 @@ app.get(
     const { tokens } = user;
     const { leagueKey } = req.params;
 
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const client = getYahooOAuthClient(tokens);
     const league = await getLeagueDraftData(leagueKey, client);
 
     const { totalPreviousPicks, totalPicksInDraft } = league;
@@ -203,7 +203,7 @@ app.get(
     const { tokens } = user;
     const { leagueKey } = req.params;
 
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const client = getYahooOAuthClient(tokens);
     const league = await getLeagueDraftData(leagueKey, client);
 
     const th = tableMetaData.find((obj) => obj.id === "etr_rank");
@@ -247,9 +247,22 @@ app.get(
 
     const { leagueKey } = req.params;
     const { tokens } = user;
-    const client = oauth.buildOAuthClient(getYahooOAuthConfig(), tokens);
+    const client = getYahooOAuthClient(tokens);
 
-    res.json(await getDraftUpdatesFromApi(leagueKey, client));
+    const selections = await getDraftUpdatesFromApi(leagueKey, client);
+
+    let teamOnTheClockName;
+    let currentPickNum;
+
+    if (selections.length) {
+      const mostRecentSelectionNum = selections.at(-1).pick;
+      const teams = getTeamsInLeague(leagueKey);
+      const idx = findTeamIndexFromPick(mostRecentSelectionNum, teams.length);
+      teamOnTheClockName = teams[idx].teamName;
+      currentPickNum = mostRecentSelectionNum + 1;
+    }
+
+    res.json({ selections, teamOnTheClockName, currentPickNum });
   })
 );
 

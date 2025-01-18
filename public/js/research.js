@@ -77,11 +77,16 @@ async function getDraftUpdates() {
         }`
       );
     }
+
     const responseJson = await response.json();
-
-    const { currentPickNum, currentTeamName } = responseJson;
-
+    const currentPickNum = responseJson.currentPickNum;
+    const teamOnTheClockName = responseJson.teamOnTheClockName;
     selections = responseJson.selections;
+
+    if (!selections.length) {
+      orchestrateTableUpdate();
+      return;
+    }
 
     for (const draftPick of selections) {
       const { pick, firstName, lastName, position, teamAbbr, selectedBy } =
@@ -94,7 +99,7 @@ async function getDraftUpdates() {
     }
 
     document.getElementById("currentPickNum").textContent = currentPickNum;
-    document.getElementById("currentTeamName").textContent = currentTeamName;
+    document.getElementById("currentTeamName").textContent = teamOnTheClockName;
 
     const toastElList = document.querySelectorAll(".toast");
     const toastList = [...toastElList].map((toastEl) => {
@@ -108,18 +113,18 @@ async function getDraftUpdates() {
     console.error(e.message);
   }
 
-  setTimeout(async () => {
-    const numOfNewSelections = await getDraftUpdates();
-    await refreshTableBody(numOfNewSelections);
-  }, 20 * 1000);
+  await updateTableBody();
+  orchestrateTableUpdate();
 
   return selections.length;
 }
 
-setTimeout(async () => {
-  const numOfNewSelections = await getDraftUpdates();
-  await refreshTableBody(numOfNewSelections);
-}, 10 * 1000);
+function orchestrateTableUpdate() {
+  setTimeout(async () => {
+    const numOfNewSelections = await getDraftUpdates();
+    await refreshTableBody(numOfNewSelections);
+  }, 10 * 1000);
+}
 
 async function refreshTableBody(numOfNewSelections) {
   if (numOfNewSelections) {
@@ -170,3 +175,5 @@ function createToast(
     </div>
   </div>`;
 }
+
+orchestrateTableUpdate();

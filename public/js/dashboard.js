@@ -17,8 +17,15 @@ async function getDraftUpdates() {
         }`
       );
     }
-    const { selections, currentPickNum, currentTeamName } =
+    const { selections, teamOnTheClockName, currentPickNum } =
       await response.json();
+
+    if (!selections.length) {
+      setTimeout(() => {
+        getDraftUpdates();
+      }, 20 * 1000);
+      return;
+    }
 
     for (const draftPick of selections) {
       const { pick, firstName, lastName, position, teamAbbr, selectedBy } =
@@ -37,7 +44,7 @@ async function getDraftUpdates() {
     }
 
     document.getElementById("currentPickNum").textContent = currentPickNum;
-    document.getElementById("currentTeamName").textContent = currentTeamName;
+    document.getElementById("currentTeamName").textContent = teamOnTheClockName;
 
     const toastElList = document.querySelectorAll(".toast");
     const toastList = [...toastElList].map((toastEl) => {

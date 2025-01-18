@@ -161,6 +161,11 @@ const getDraftTeamsStatement = dbPrepare(`
   order by draft_position
 `);
 
+export function getTeamsInLeague(leagueKey) {
+  updateAccessTime(leagueKey);
+  return getDraftTeamsStatement.all(leagueKey);
+}
+
 const getDraftSelectionsStatement = dbPrepare(`
   select
     ds.team_key as "teamKey",

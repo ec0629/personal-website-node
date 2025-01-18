@@ -1,5 +1,3 @@
-import { importJWK, jwtVerify } from "jose";
-import oauth from "./oauth.js";
 import {
   getDraftData,
   getDraftSelectionsAfterPick,
@@ -9,22 +7,8 @@ import {
   insertDraftData,
 } from "../repositories/draftRepo.js";
 
-export function getYahooOAuthConfig() {
-  return {
-    clientId: process.env.YAHOO_CLIENT_ID_OIDC,
-    clientSecret: process.env.YAHOO_CLIENT_SECRET_OIDC,
-    redirectUri: process.env.REDIRECT_URI,
-  };
-}
-
-export function getYahooAuthorizationUrl() {
-  return oauth.getAuthorizationUrl(getYahooOAuthConfig());
-}
-
-export function requestYahooAccessToken(code) {
-  const config = getYahooOAuthConfig();
-  return oauth.requestAccessToken({ code, ...config });
-}
+// Delete this segment, just used for demonstration
+let simulatedDraftResultsIncrement = 0;
 
 export async function getDraftUpdatesFromApi(leagueKey, client) {
   const url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey};out=draftresults,teams?format=json_f`;
@@ -33,50 +17,44 @@ export async function getDraftUpdatesFromApi(leagueKey, client) {
 
   const { league: l } = response.fantasy_content;
 
-  // if (!response.ok) {
-  //   const message = await response.text();
-  //   console.log(message);
-  // }
-
   const previousPickNumber = getPreviousDraftPickNumber(leagueKey) ?? 0;
 
   const draftResults = l.draft_results.filter((ds) => {
-    console.log(ds);
     if (ds.draft_result.player_key) {
       return true;
     }
     return false;
   });
 
-  const newDraftSelections = draftResults.slice(previousPickNumber).map((d) => {
-    const { pick, round, player_key, team_key } = d.draft_result;
+  // Delete this segment, just used for demonstration
+  if (draftResults.length > previousPickNumber) {
+    simulatedDraftResultsIncrement = previousPickNumber;
+    simulatedDraftResultsIncrement += 1;
+  }
 
-    const [gameId, l, leagueId] = team_key.split(".");
-    const playerId = player_key.split(".").at(-1);
-    return {
-      pick,
-      round,
-      leagueKey: [gameId, l, leagueId].join("."),
-      teamKey: team_key,
-      playerId,
-    };
-  });
+  const newDraftSelections = draftResults
+    .slice(previousPickNumber, simulatedDraftResultsIncrement)
+    .map((d) => {
+      const { pick, round, player_key, team_key } = d.draft_result;
 
-  const teamsOrderedByDraftPosition = l.teams
-    .map((t) => t.team)
-    .sort((a, b) => a.draft_position - b.draft_position);
+      const [gameId, l, leagueId] = team_key.split(".");
+      const playerId = player_key.split(".").at(-1);
+      return {
+        pick,
+        round,
+        leagueKey: [gameId, l, leagueId].join("."),
+        teamKey: team_key,
+        playerId,
+      };
+    });
 
   insertBulkDraftSelections(newDraftSelections);
   const selections = getDraftSelectionsAfterPick(leagueKey, previousPickNumber);
-  const totalPreviousPicks = draftResults.length;
-  const currentPickNum = totalPreviousPicks + 1;
-  const teamIndex = findTeamIndexFromPick(totalPreviousPicks, l.teams.length);
-  const currentTeam = teamsOrderedByDraftPosition[teamIndex];
-  const currentTeamName = currentTeam.name;
-  return { selections, currentPickNum, currentTeamName };
+
+  return selections;
 }
 
-function findTeamIndexFromPick(totalPreviousPicks, numTeams) {
+export function findTeamIndexFromPick(totalPreviousPicks, numTeams) {
   const round = Math.ceil((totalPreviousPicks + 1) / numTeams);
 
   const index = totalPreviousPicks % numTeams;
@@ -199,39 +177,4 @@ export async function getUsersLeaguesAndTeams(client) {
       },
     };
   });
-}
-
-export async function verifyYahooJwtAndDecode(token) {
-  const jwksUrl = "https://api.login.yahoo.com/openid/v1/certs";
-
-  const response = await fetch(jwksUrl);
-
-  if (!response.ok) {
-    // TODO: YAHOO_ERROR?
-    const message = await response.text();
-    throw new Error(
-      `Response message: ${message}. Response status: ${response.status}`
-    );
-  }
-
-  const jwks = await response.json();
-
-  const [encodedTokenHeader] = token.split(".");
-
-  const decodedTokenHeader = JSON.parse(
-    Buffer.from(encodedTokenHeader, "base64").toString("utf8")
-  );
-  const kid = decodedTokenHeader.kid;
-
-  const jwk = jwks.keys.find((key) => key.kid === kid);
-
-  if (!jwk) {
-    throw new Error("Public key not found in JWKS");
-  }
-
-  const key = await importJWK(jwk, jwk.alg);
-
-  const { payload } = await jwtVerify(token, key);
-
-  return payload;
 }
